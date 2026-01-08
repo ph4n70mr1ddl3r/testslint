@@ -18,7 +18,7 @@ component CardDisplay inherits Rectangle {
     }
 }
 
-component PlayerArea inherits Rectangle {
+component PlayerAreaCompact inherits Rectangle {
     in property <string> name: "";
     in property <float> chips: 0;
     in property <float> current_bet: 0;
@@ -28,7 +28,6 @@ component PlayerArea inherits Rectangle {
     in property <bool> hole_card2_red: false;
     in property <bool> is_acting: false;
     in property <bool> is_folded: false;
-    in property <bool> show_cards: true;
     in property <bool> is_dealer: false;
     
     background: is_acting ? #4a3a00 : #2a2a2a;
@@ -82,11 +81,11 @@ component PlayerArea inherits Rectangle {
         y: 26px;
     }
     
-    if show_cards && !is_folded : Rectangle {
+    Rectangle {
         x: (parent.width - 48px) / 2;
         y: 36px;
         width: 48px;
-        height: 32px;
+        height: 28px;
         
         CardDisplay {
             card_value: hole_card1;
@@ -95,7 +94,7 @@ component PlayerArea inherits Rectangle {
             x: 0;
             y: 0;
             width: 22px;
-            height: 30px;
+            height: 26px;
         }
         CardDisplay {
             card_value: hole_card2;
@@ -104,7 +103,7 @@ component PlayerArea inherits Rectangle {
             x: 24px;
             y: 0;
             width: 22px;
-            height: 30px;
+            height: 26px;
         }
     }
     
@@ -124,6 +123,60 @@ component PlayerArea inherits Rectangle {
         y: 4px;
         border-radius: 3px;
         background: #00ff00;
+    }
+}
+
+component ActionButton inherits Rectangle {
+    in property <string> text: "";
+    in property <color> bg_color: #4a6fa5;
+    in property <bool> enabled: true;
+    
+    background: enabled ? bg_color : #555555;
+    border-radius: 4px;
+    
+    Text {
+        text: parent.text;
+        font-size: 11px;
+        font-weight: 600;
+        color: #ffffff;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+component BetSlider inherits Rectangle {
+    in property <float> value: 0;
+    in property <float> min: 0;
+    in property <float> max: 100;
+    in property <string> label: "";
+    
+    background: #1a1a1a;
+    border-radius: 4px;
+    
+    Text {
+        text: label + ": " + value;
+        font-size: 10px;
+        color: #ffd700;
+        x: 4px;
+        y: 2px;
+    }
+    
+    Rectangle {
+        x: 4px;
+        y: 18px;
+        width: parent.width - 8px;
+        height: 6px;
+        background: #333;
+        border-radius: 3px;
+        
+        Rectangle {
+            x: 0;
+            y: 0;
+            width: (parent.width - 8px) * ((value - min) / (max - min));
+            height: 6px;
+            background: #ffd700;
+            border-radius: 3px;
+        }
     }
 }
 
@@ -168,6 +221,16 @@ export component PokerApp inherits Window {
     in property <float> p1_current_bet: 0;
     in property <float> p2_current_bet: 0;
     
+    in property <bool> can_check: false;
+    in property <bool> can_call: false;
+    in property <bool> can_bet: false;
+    in property <bool> can_raise: false;
+    in property <bool> can_fold: false;
+    in property <float> call_amount: 0;
+    in property <float> bet_amount: 0;
+    in property <float> min_bet: 0;
+    in property <float> max_bet: 0;
+    
     title: "Poker Simulation";
     min-width: 320px;
     min-height: 480px;
@@ -178,101 +241,17 @@ export component PokerApp inherits Window {
         background: #1a472a;
         
         Rectangle {
-            width: min(parent.width * 0.95, 360px);
-            height: min(parent.height * 0.94, 440px);
+            width: min(parent.width * 0.96, 340px);
+            height: min(parent.height * 0.38, 180px);
             x: (parent.width - self.width) / 2;
-            y: (parent.height - self.height) / 2;
-            border-radius: 10px;
+            y: 4px;
+            border-radius: 8px;
             background: #2d5a3d;
-            border-width: 4px;
+            border-width: 3px;
             border-color: #8b4513;
-            
-            Rectangle {
-                width: parent.width - 8px;
-                height: parent.height - 8px;
-                x: 4px;
-                y: 4px;
-                border-radius: 8px;
-                background: #356e4b;
-            }
         }
         
-        Rectangle {
-            width: min(parent.width * 0.3, 90px);
-            height: 24px;
-            x: (parent.width - self.width) / 2;
-            y: parent.height * 0.42;
-            border-radius: 6px;
-            background: #1a1a1a;
-            border-width: 1px;
-            border-color: #ffd700;
-            
-            Text {
-                text: "Pot: " + pot_size;
-                font-size: 11px;
-                font-weight: 600;
-                color: #ffd700;
-                horizontal-alignment: center;
-                vertical-alignment: center;
-            }
-        }
-        
-        Rectangle {
-            width: min(parent.width * 0.92, 280px);
-            height: 36px;
-            x: (parent.width - self.width) / 2;
-            y: parent.height * 0.255;
-            
-            CardDisplay {
-                card_value: flop1;
-                face_up: flop1 != "";
-                is_red: flop1_red;
-                x: 0;
-                y: 0;
-                width: min(parent.width * 0.15, 44px);
-                height: self.width * 1.3;
-            }
-            CardDisplay {
-                card_value: flop2;
-                face_up: flop2 != "";
-                is_red: flop2_red;
-                x: min(parent.width * 0.18, 54px);
-                y: 0;
-                width: min(parent.width * 0.15, 44px);
-                height: self.width * 1.3;
-            }
-            CardDisplay {
-                card_value: flop3;
-                face_up: flop3 != "";
-                is_red: flop3_red;
-                x: min(parent.width * 0.36, 108px);
-                y: 0;
-                width: min(parent.width * 0.15, 44px);
-                height: self.width * 1.3;
-            }
-            
-            CardDisplay {
-                card_value: turn;
-                face_up: turn != "";
-                is_red: turn_red;
-                x: min(parent.width * 0.54, 162px);
-                y: 0;
-                width: min(parent.width * 0.15, 44px);
-                height: self.width * 1.3;
-            }
-            
-            CardDisplay {
-                card_value: river;
-                face_up: river != "";
-                is_red: river_red;
-                x: min(parent.width * 0.72, 216px);
-                y: 0;
-                width: min(parent.width * 0.15, 44px);
-                height: self.width * 1.3;
-            }
-        }
-        
-        PlayerArea {
+        PlayerAreaCompact {
             name: player2_name;
             chips: player2_chips;
             current_bet: p2_current_bet;
@@ -282,57 +261,94 @@ export component PokerApp inherits Window {
             hole_card2_red: p2_card2_red;
             is_acting: p2_acting;
             is_folded: p2_folded;
-            show_cards: show_hole_cards;
             is_dealer: dealer_position == 1;
-            x: (parent.width - min(parent.width * 0.45, 130px)) / 2;
+            x: (parent.width - min(parent.width * 0.44, 125px)) / 2;
             y: parent.height * 0.01;
-            width: min(parent.width * 0.45, 130px);
-            height: min(parent.height * 0.18, 85px);
-        }
-        
-        PlayerArea {
-            name: player1_name;
-            chips: player1_chips;
-            current_bet: p1_current_bet;
-            hole_card1: p1_card1;
-            hole_card2: p1_card2;
-            hole_card1_red: p1_card1_red;
-            hole_card2_red: p1_card2_red;
-            is_acting: p1_acting;
-            is_folded: p1_folded;
-            show_cards: show_hole_cards;
-            is_dealer: dealer_position == 0;
-            x: (parent.width - min(parent.width * 0.45, 130px)) / 2;
-            y: parent.height * 0.81;
-            width: min(parent.width * 0.45, 130px);
-            height: min(parent.height * 0.18, 85px);
+            width: min(parent.width * 0.44, 125px);
+            height: min(parent.height * 0.15, 72px);
         }
         
         Rectangle {
-            width: min(parent.width * 0.6, 170px);
-            height: 22px;
+            width: min(parent.width * 0.28, 80px);
+            height: 20px;
             x: (parent.width - self.width) / 2;
-            y: parent.height * 0.51;
-            border-radius: 6px;
-            background: rgba(0, 0, 0, 0.7);
+            y: parent.height * 0.17;
+            border-radius: 5px;
+            background: #1a1a1a;
             border-width: 1px;
-            border-color: rgba(255, 255, 255, 0.3);
+            border-color: #ffd700;
             
             Text {
-                text: message;
-                font-size: 9px;
-                color: #ffffff;
+                text: "Pot: " + pot_size;
+                font-size: 10px;
+                font-weight: 600;
+                color: #ffd700;
                 horizontal-alignment: center;
                 vertical-alignment: center;
             }
         }
         
         Rectangle {
-            width: min(parent.width * 0.22, 65px);
-            height: 18px;
+            width: min(parent.width * 0.9, 270px);
+            height: 32px;
             x: (parent.width - self.width) / 2;
-            y: parent.height * 0.065;
-            border-radius: 5px;
+            y: parent.height * 0.21;
+            
+            CardDisplay {
+                card_value: flop1;
+                face_up: flop1 != "";
+                is_red: flop1_red;
+                x: 0;
+                y: 0;
+                width: min(parent.width * 0.14, 40px);
+                height: self.width * 1.3;
+            }
+            CardDisplay {
+                card_value: flop2;
+                face_up: flop2 != "";
+                is_red: flop2_red;
+                x: min(parent.width * 0.17, 48px);
+                y: 0;
+                width: min(parent.width * 0.14, 40px);
+                height: self.width * 1.3;
+            }
+            CardDisplay {
+                card_value: flop3;
+                face_up: flop3 != "";
+                is_red: flop3_red;
+                x: min(parent.width * 0.34, 96px);
+                y: 0;
+                width: min(parent.width * 0.14, 40px);
+                height: self.width * 1.3;
+            }
+            
+            CardDisplay {
+                card_value: turn;
+                face_up: turn != "";
+                is_red: turn_red;
+                x: min(parent.width * 0.51, 144px);
+                y: 0;
+                width: min(parent.width * 0.14, 40px);
+                height: self.width * 1.3;
+            }
+            
+            CardDisplay {
+                card_value: river;
+                face_up: river != "";
+                is_red: river_red;
+                x: min(parent.width * 0.68, 192px);
+                y: 0;
+                width: min(parent.width * 0.14, 40px);
+                height: self.width * 1.3;
+            }
+        }
+        
+        Rectangle {
+            width: min(parent.width * 0.25, 70px);
+            height: 16px;
+            x: (parent.width - self.width) / 2;
+            y: parent.height * 0.075;
+            border-radius: 4px;
             background: #4a6fa5;
             
             Text {
@@ -343,6 +359,108 @@ export component PokerApp inherits Window {
                 horizontal-alignment: center;
                 vertical-alignment: center;
             }
+        }
+        
+        Rectangle {
+            width: min(parent.width * 0.55, 160px);
+            height: 18px;
+            x: (parent.width - self.width) / 2;
+            y: parent.height * 0.38;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            border-width: 1px;
+            border-color: rgba(255, 255, 255, 0.2);
+            
+            Text {
+                text: message;
+                font-size: 8px;
+                color: #ffffff;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        Rectangle {
+            width: min(parent.width * 0.92, 280px);
+            height: 70px;
+            x: (parent.width - self.width) / 2;
+            y: parent.height * 0.42;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            border-width: 1px;
+            border-color: rgba(255, 255, 255, 0.1);
+            
+            BetSlider {
+                x: 6px;
+                y: 4px;
+                width: parent.width - 12px;
+                height: 28px;
+                value: bet_amount;
+                min: min_bet;
+                max: max_bet;
+                label: "Bet";
+            }
+            
+            Rectangle {
+                x: 4px;
+                y: 36px;
+                width: parent.width - 8px;
+                height: 32px;
+                
+                ActionButton {
+                    text: "Fold";
+                    bg_color: #aa4444;
+                    enabled: can_fold;
+                    x: 0;
+                    y: 0;
+                    width: min(parent.width * 0.22, 58px);
+                    height: 30px;
+                }
+                ActionButton {
+                    text: "Check";
+                    bg_color: #4a7fa5;
+                    enabled: can_check;
+                    x: min(parent.width * 0.24, 64px);
+                    y: 0;
+                    width: min(parent.width * 0.22, 58px);
+                    height: 30px;
+                }
+                ActionButton {
+                    text: "Call " + call_amount;
+                    bg_color: #4a9a5a;
+                    enabled: can_call;
+                    x: min(parent.width * 0.48, 126px);
+                    y: 0;
+                    width: min(parent.width * 0.24, 64px);
+                    height: 30px;
+                }
+                ActionButton {
+                    text: "Raise";
+                    bg_color: #9a7a4a;
+                    enabled: can_raise;
+                    x: min(parent.width * 0.74, 194px);
+                    y: 0;
+                    width: min(parent.width * 0.24, 64px);
+                    height: 30px;
+                }
+            }
+        }
+        
+        PlayerAreaCompact {
+            name: player1_name;
+            chips: player1_chips;
+            current_bet: p1_current_bet;
+            hole_card1: p1_card1;
+            hole_card2: p1_card2;
+            hole_card1_red: p1_card1_red;
+            hole_card2_red: p1_card2_red;
+            is_acting: p1_acting;
+            is_folded: p1_folded;
+            is_dealer: dealer_position == 0;
+            x: (parent.width - min(parent.width * 0.44, 125px)) / 2;
+            y: parent.height * 0.84;
+            width: min(parent.width * 0.44, 125px);
+            height: min(parent.height * 0.15, 72px);
         }
     }
 }
