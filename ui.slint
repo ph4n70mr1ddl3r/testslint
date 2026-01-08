@@ -241,10 +241,10 @@ export component PokerApp inherits Window {
         background: #1a472a;
         
         Rectangle {
-            width: min(parent.width * 0.94, 360px);
-            height: min(parent.height * 0.58, 280px);
+            width: min(parent.width * 0.96, 380px);
+            height: parent.height - 70px;
             x: (parent.width - self.width) / 2;
-            y: parent.height * 0.01;
+            y: 2px;
             border-radius: 16px;
             background: #2d5a3d;
             border-width: 6px;
@@ -270,17 +270,17 @@ export component PokerApp inherits Window {
                 is_acting: p2_acting;
                 is_folded: p2_folded;
                 is_dealer: dealer_position == 1;
-                x: (parent.width - min(parent.width * 0.38, 120px)) / 2;
+                x: (parent.width - min(parent.width * 0.4, 135px)) / 2;
                 y: 8px;
-                width: min(parent.width * 0.38, 120px);
-                height: min(parent.height * 0.18, 52px);
+                width: min(parent.width * 0.4, 135px);
+                height: min(parent.height * 0.16, 58px);
             }
             
             Rectangle {
-                width: min(parent.width * 0.7, 220px);
+                width: min(parent.width * 0.25, 85px);
                 height: 18px;
                 x: (parent.width - self.width) / 2;
-                y: parent.height * 0.38;
+                y: parent.height * 0.3;
                 border-radius: 5px;
                 background: #1a1a1a;
                 border-width: 1px;
@@ -297,10 +297,10 @@ export component PokerApp inherits Window {
             }
             
             Rectangle {
-                width: min(parent.width * 0.85, 260px);
-                height: 28px;
+                width: min(parent.width * 0.9, 300px);
+                height: 34px;
                 x: (parent.width - self.width) / 2;
-                y: parent.height * 0.46;
+                y: parent.height * 0.38;
                 
                 CardDisplay {
                     card_value: flop1;
@@ -308,25 +308,25 @@ export component PokerApp inherits Window {
                     is_red: flop1_red;
                     x: 0;
                     y: 0;
-                    width: min(parent.width * 0.14, 36px);
+                    width: min(parent.width * 0.15, 44px);
                     height: self.width * 1.3;
                 }
                 CardDisplay {
                     card_value: flop2;
                     face_up: flop2 != "";
                     is_red: flop2_red;
-                    x: min(parent.width * 0.17, 44px);
+                    x: min(parent.width * 0.18, 52px);
                     y: 0;
-                    width: min(parent.width * 0.14, 36px);
+                    width: min(parent.width * 0.15, 44px);
                     height: self.width * 1.3;
                 }
                 CardDisplay {
                     card_value: flop3;
                     face_up: flop3 != "";
                     is_red: flop3_red;
-                    x: min(parent.width * 0.34, 88px);
+                    x: min(parent.width * 0.36, 104px);
                     y: 0;
-                    width: min(parent.width * 0.14, 36px);
+                    width: min(parent.width * 0.15, 44px);
                     height: self.width * 1.3;
                 }
                 
@@ -334,9 +334,9 @@ export component PokerApp inherits Window {
                     card_value: turn;
                     face_up: turn != "";
                     is_red: turn_red;
-                    x: min(parent.width * 0.51, 132px);
+                    x: min(parent.width * 0.54, 156px);
                     y: 0;
-                    width: min(parent.width * 0.14, 36px);
+                    width: min(parent.width * 0.15, 44px);
                     height: self.width * 1.3;
                 }
                 
@@ -344,18 +344,18 @@ export component PokerApp inherits Window {
                     card_value: river;
                     face_up: river != "";
                     is_red: river_red;
-                    x: min(parent.width * 0.68, 176px);
+                    x: min(parent.width * 0.72, 208px);
                     y: 0;
-                    width: min(parent.width * 0.14, 36px);
+                    width: min(parent.width * 0.15, 44px);
                     height: self.width * 1.3;
                 }
             }
             
             Rectangle {
-                width: min(parent.width * 0.2, 60px);
+                width: min(parent.width * 0.18, 60px);
                 height: 14px;
                 x: (parent.width - self.width) / 2;
-                y: parent.height * 0.08;
+                y: parent.height * 0.06;
                 border-radius: 4px;
                 background: #4a6fa5;
                 
@@ -370,10 +370,10 @@ export component PokerApp inherits Window {
             }
             
             Rectangle {
-                width: min(parent.width * 0.5, 150px);
+                width: min(parent.width * 0.5, 160px);
                 height: 16px;
                 x: (parent.width - self.width) / 2;
-                y: parent.height * 0.7;
+                y: parent.height * 0.52;
                 border-radius: 4px;
                 background: rgba(0, 0, 0, 0.6);
                 border-width: 1px;
@@ -399,28 +399,24 @@ export component PokerApp inherits Window {
                 is_acting: p1_acting;
                 is_folded: p1_folded;
                 is_dealer: dealer_position == 0;
-                x: (parent.width - min(parent.width * 0.38, 120px)) / 2;
-                y: parent.height - 60px;
-                width: min(parent.width * 0.38, 120px);
-                height: min(parent.height * 0.18, 52px);
+                x: (parent.width - min(parent.width * 0.4, 135px)) / 2;
+                y: parent.height - 66px;
+                width: min(parent.width * 0.4, 135px);
+                height: min(parent.height * 0.16, 58px);
             }
         }
         
         Rectangle {
-            width: min(parent.width * 0.94, 360px);
+            width: parent.width;
             height: 68px;
-            x: (parent.width - self.width) / 2;
-            y: parent.height * 0.6;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 8px;
-            border-width: 1px;
-            border-color: rgba(255, 255, 255, 0.15);
+            y: parent.height - 68px;
+            background: rgba(0, 0, 0, 0.5);
             
             BetSlider {
-                x: 6px;
+                x: 8px;
                 y: 4px;
-                width: parent.width - 12px;
-                height: 26px;
+                width: parent.width - 16px;
+                height: 24px;
                 value: bet_amount;
                 min: min_bet;
                 max: max_bet;
@@ -428,10 +424,10 @@ export component PokerApp inherits Window {
             }
             
             Rectangle {
-                x: 4px;
-                y: 32px;
-                width: parent.width - 8px;
-                height: 34px;
+                x: 6px;
+                y: 30px;
+                width: parent.width - 12px;
+                height: 36px;
                 
                 ActionButton {
                     text: "Fold";
@@ -439,35 +435,35 @@ export component PokerApp inherits Window {
                     enabled: can_fold;
                     x: 0;
                     y: 0;
-                    width: min(parent.width * 0.22, 72px);
-                    height: 32px;
+                    width: min(parent.width * 0.22, 70px);
+                    height: 34px;
                 }
                 ActionButton {
                     text: "Check";
                     bg_color: #4a7fa5;
                     enabled: can_check;
-                    x: min(parent.width * 0.24, 78px);
+                    x: min(parent.width * 0.24, 76px);
                     y: 0;
-                    width: min(parent.width * 0.22, 72px);
-                    height: 32px;
+                    width: min(parent.width * 0.22, 70px);
+                    height: 34px;
                 }
                 ActionButton {
                     text: "Call " + call_amount;
                     bg_color: #4a9a5a;
                     enabled: can_call;
-                    x: min(parent.width * 0.48, 156px);
+                    x: min(parent.width * 0.48, 152px);
                     y: 0;
-                    width: min(parent.width * 0.24, 78px);
-                    height: 32px;
+                    width: min(parent.width * 0.24, 76px);
+                    height: 34px;
                 }
                 ActionButton {
                     text: "Raise";
                     bg_color: #9a7a4a;
                     enabled: can_raise;
-                    x: min(parent.width * 0.74, 240px);
+                    x: min(parent.width * 0.74, 234px);
                     y: 0;
-                    width: min(parent.width * 0.24, 78px);
-                    height: 32px;
+                    width: min(parent.width * 0.24, 76px);
+                    height: 34px;
                 }
             }
         }
