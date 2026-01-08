@@ -1,4 +1,4 @@
-export component CardDisplay {
+component CardDisplay inherits Rectangle {
     in property <string> card_value: "";
     in property <bool> face_up: true;
     in property <bool> is_red: false;
@@ -6,26 +6,22 @@ export component CardDisplay {
     width: 50px;
     height: 70px;
     
-    Rectangle {
-        width: parent.width;
-        height: parent.height;
-        border-radius: 6px;
-        background: face_up ? (card_value != "" ? #ffffff : #1a1a2e) : #1a1a2e;
-        border-width: 2px;
-        border-color: face_up ? #cccccc : #333;
-        
-        if face_up && card_value != "" : Text {
-            text: card_value;
-            font-size: 20px;
-            font-weight: 700;
-            color: is_red ? #dc143c : #1a1a1a;
-            horizontal-alignment: center;
-            vertical-alignment: center;
-        }
+    background: face_up ? (card_value != "" ? #ffffff : #1a1a2e) : #1a1a2e;
+    border-radius: 6px;
+    border-width: 2px;
+    border-color: face_up ? #cccccc : #333;
+    
+    if face_up && card_value != "" : Text {
+        text: card_value;
+        font-size: 20px;
+        font-weight: 700;
+        color: is_red ? #dc143c : #1a1a1a;
+        horizontal-alignment: center;
+        vertical-alignment: center;
     }
 }
 
-export component PlayerArea {
+component PlayerArea inherits Rectangle {
     in property <string> name: "";
     in property <float> chips: 0;
     in property <float> current_bet: 0;
@@ -42,113 +38,108 @@ export component PlayerArea {
     height: 120px;
     
     Rectangle {
-        width: parent.width;
-        height: parent.height;
-        
-        Rectangle {
-            width: 160px;
-            height: 100px;
-            x: (parent.width - self.width) / 2;
-            y: (parent.height - self.height) / 2;
-            border-radius: 10px;
-            background: is_acting ? #4a3a00 : #2a2a2a;
-            border-width: 2px;
-            border-color: is_acting ? #ffd700 : #444;
-        }
-        
-        if is_dealer : Rectangle {
-            width: 24px;
-            height: 24px;
-            x: 5px;
-            y: 5px;
-            border-radius: 12px;
-            background: #ffffff;
-            border-width: 2px;
-            border-color: #ffd700;
-            
-            Text {
-                text: "D";
-                font-size: 12px;
-                font-weight: 700;
-                color: #1a1a1a;
-                horizontal-alignment: center;
-                vertical-alignment: center;
-            }
-        }
+        width: 160px;
+        height: 100px;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        border-radius: 10px;
+        background: is_acting ? #4a3a00 : #2a2a2a;
+        border-width: 2px;
+        border-color: is_acting ? #ffd700 : #444;
+    }
+    
+    if is_dealer : Rectangle {
+        width: 24px;
+        height: 24px;
+        x: 5px;
+        y: 5px;
+        border-radius: 12px;
+        background: #ffffff;
+        border-width: 2px;
+        border-color: #ffd700;
         
         Text {
-            text: name;
+            text: "D";
             font-size: 12px;
-            font-weight: 600;
-            color: #ffffff;
-            x: (parent.width - self.width) / 2;
-            y: 8px;
+            font-weight: 700;
+            color: #1a1a1a;
+            horizontal-alignment: center;
+            vertical-alignment: center;
         }
+    }
+    
+    Text {
+        text: name;
+        font-size: 12px;
+        font-weight: 600;
+        color: #ffffff;
+        x: (parent.width - self.width) / 2;
+        y: 8px;
+    }
+    
+    Text {
+        text: chips;
+        font-size: 14px;
+        font-weight: 600;
+        color: #ffd700;
+        x: (parent.width - self.width) / 2;
+        y: 24px;
+    }
+    
+    if current_bet > 0 : Text {
+        text: "Bet: " + current_bet;
+        font-size: 11px;
+        color: #aaaaaa;
+        x: (parent.width - self.width) / 2;
+        y: 42px;
+    }
+    
+    if show_cards && !is_folded : Rectangle {
+        x: (parent.width - 80px) / 2;
+        y: 50px;
+        width: 80px;
+        height: 55px;
         
-        Text {
-            text: chips;
-            font-size: 14px;
-            font-weight: 600;
-            color: #ffd700;
-            x: (parent.width - self.width) / 2;
-            y: 24px;
+        CardDisplay {
+            card_value: hole_card1;
+            face_up: true;
+            is_red: hole_card1_red;
+            x: 0;
+            y: 5px;
+            width: 35px;
+            height: 50px;
         }
-        
-        if current_bet > 0 : Text {
-            text: "Bet: " + current_bet;
-            font-size: 11px;
-            color: #aaaaaa;
-            x: (parent.width - self.width) / 2;
-            y: 42px;
+        CardDisplay {
+            card_value: hole_card2;
+            face_up: true;
+            is_red: hole_card2_red;
+            x: 40px;
+            y: 5px;
+            width: 35px;
+            height: 50px;
         }
-        
-        if show_cards && !is_folded : Rectangle {
-            x: (parent.width - 80px) / 2;
-            y: 50px;
-            width: 80px;
-            height: 55px;
-            
-            CardDisplay {
-                card_value: hole_card1;
-                face_up: true;
-                is_red: hole_card1_red;
-                x: 0;
-                y: 5px;
-                width: 35px;
-                height: 50px;
-            }
-            CardDisplay {
-                card_value: hole_card2;
-                face_up: true;
-                is_red: hole_card2_red;
-                x: 40px;
-                y: 5px;
-                width: 35px;
-                height: 50px;
-            }
-        }
-        
-        if is_folded : Text {
-            text: "FOLDED";
-            font-size: 16px;
-            font-weight: 600;
-            color: #ff4444;
-            x: (parent.width - self.width) / 2;
-            y: (parent.height - self.height) / 2;
-        }
-        
-        if is_acting : Rectangle {
-            width: 10px;
-            height: 10px;
-            x: parent.width - 15px;
-            y: 10px;
-            border-radius: 5px;
-            background: #00ff00;
-        }
+    }
+    
+    if is_folded : Text {
+        text: "FOLDED";
+        font-size: 16px;
+        font-weight: 600;
+        color: #ff4444;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+    }
+    
+    if is_acting : Rectangle {
+        width: 10px;
+        height: 10px;
+        x: parent.width - 15px;
+        y: 10px;
+        border-radius: 5px;
+        background: #00ff00;
     }
 }
 
-export component PokerApp {
+export component PokerApp inherits Window {
     in property <string> player1_name: "Player 1";
     in property <string> player2_name: "Player 2";
     in property <float> player1_chips: 10000;
@@ -188,6 +179,10 @@ export component PokerApp {
     in property <bool> p2_folded: false;
     in property <float> p1_current_bet: 0;
     in property <float> p2_current_bet: 0;
+    
+    title: "Poker Simulation";
+    width: 600px;
+    height: 450px;
     
     Rectangle {
         width: parent.width;
