@@ -173,10 +173,12 @@ component BetSlider inherits Rectangle {
         TouchArea {
             width: parent.width;
             height: parent.height;
-            clicked => {
-                let pct = self.pressed_x / self.width;
-                let new_value = min + pct * (max - min);
-                value_changed(new_value);
+            pointer-event(event) => {
+                if event.kind == PointerEventKind.down {
+                    let pct = self.pressed_x / self.width;
+                    let new_value = min + pct * (max - min);
+                    value_changed(new_value);
+                }
             }
         }
     }
@@ -190,6 +192,23 @@ component BetSlider inherits Rectangle {
         border-radius: 2px;
         border-width: 1px;
         border-color: #888;
+        
+        TouchArea {
+            width: parent.width;
+            height: parent.height;
+            pointer-event(event) => {
+                if event.kind == PointerEventKind.down {
+                    let pct = self.pressed_x / self.width;
+                    let new_value = min + pct * (max - min);
+                    value_changed(new_value);
+                }
+            }
+            moved => {
+                let pct = self.pressed_x / self.width;
+                let new_value = min + pct * (max - min);
+                value_changed(new_value);
+            }
+        }
     }
     
     Text {
