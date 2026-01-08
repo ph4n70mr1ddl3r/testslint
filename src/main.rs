@@ -181,6 +181,7 @@ struct PokerGame {
     timer: Option<Timer>,
     game_rc: Option<Rc<RefCell<PokerGame>>>,
     all_in_this_street: bool,
+    bet_amount: f64,
 }
 
 impl PokerGame {
@@ -206,6 +207,7 @@ impl PokerGame {
             timer: None,
             game_rc: None,
             all_in_this_street: false,
+            bet_amount: 0.0,
         }
     }
 
@@ -869,6 +871,15 @@ fn main() {
     app.set_pot_size(0.0);
     app.set_game_stage("Starting".into());
     app.set_message("Initializing game...".into());
+    app.set_bet_amount(0.0);
+    app.set_min_bet(0.0);
+    app.set_max_bet(100.0);
+    app.set_call_amount(0.0);
+    app.set_can_check(false);
+    app.set_can_call(false);
+    app.set_can_bet(false);
+    app.set_can_raise(false);
+    app.set_can_fold(false);
 
     let game_weak = app.as_weak();
     let game = Rc::new(RefCell::new(PokerGame::new(game_weak)));
@@ -877,6 +888,13 @@ fn main() {
 
     game.borrow_mut().game_rc = Some(game.clone());
     game.borrow_mut().start_timer();
+
+    let game_clone = game.clone();
+    app.on_bet_changed(move |value| {
+        println!("Bet changed to: {}", value);
+        let mut g = game_clone.borrow_mut();
+        g.bet_amount = value as f64;
+    });
 
     app.run().unwrap();
 }

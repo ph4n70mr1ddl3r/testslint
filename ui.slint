@@ -150,8 +150,48 @@ component BetSlider inherits Rectangle {
     in property <float> max: 100;
     in property <string> label: "";
     
+    callback value_changed(float);
+    
     background: #1a1a1a;
     border-radius: 4px;
+    
+    track := Rectangle {
+        width: parent.width - 8px;
+        height: 6px;
+        x: 4px;
+        y: 18px;
+        background: #444;
+        border-radius: 3px;
+        
+        fill := Rectangle {
+            width: (parent.width - 8px) * ((value - min) / (max - min));
+            height: 6px;
+            background: #ffd700;
+            border-radius: 3px;
+        }
+        
+        TouchArea {
+            width: parent.width;
+            height: parent.height;
+            clicked => {
+                let click_x = self.pressed_x - self.x;
+                let pct = click_x / parent.width;
+                let new_value = min + pct * (max - min);
+                value_changed(new_value);
+            }
+        }
+    }
+    
+    handle := Rectangle {
+        x: 4px + (parent.width - 8px) * ((value - min) / (max - min)) - 6px;
+        y: 16px;
+        width: 12px;
+        height: 10px;
+        background: #ffffff;
+        border-radius: 2px;
+        border-width: 1px;
+        border-color: #888;
+    }
     
     Text {
         text: label + ": " + value;
@@ -159,24 +199,6 @@ component BetSlider inherits Rectangle {
         color: #ffd700;
         x: 4px;
         y: 2px;
-    }
-    
-    Rectangle {
-        x: 4px;
-        y: 18px;
-        width: parent.width - 8px;
-        height: 6px;
-        background: #333;
-        border-radius: 3px;
-        
-        Rectangle {
-            x: 0;
-            y: 0;
-            width: (parent.width - 8px) * ((value - min) / (max - min));
-            height: 6px;
-            background: #ffd700;
-            border-radius: 3px;
-        }
     }
 }
 
@@ -227,9 +249,11 @@ export component PokerApp inherits Window {
     in property <bool> can_raise: false;
     in property <bool> can_fold: false;
     in property <float> call_amount: 0;
-    in property <float> bet_amount: 0;
+    in-out property <float> bet_amount: 0;
     in property <float> min_bet: 0;
     in property <float> max_bet: 0;
+    
+    callback bet_changed(float);
     
     title: "Poker Simulation";
     min-width: 320px;
@@ -421,6 +445,10 @@ export component PokerApp inherits Window {
                 min: min_bet;
                 max: max_bet;
                 label: "Bet";
+                value_changed(new_value) => {
+                    bet_amount = new_value;
+                    bet_changed(new_value);
+                }
             }
             
             Rectangle {
