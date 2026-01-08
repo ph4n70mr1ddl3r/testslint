@@ -174,8 +174,8 @@ export component PokerApp inherits Window {
         background: #1a472a;
         
         Rectangle {
-            width: min(parent.width * 0.95, 380px);
-            height: min(parent.height * 0.92, 620px);
+            width: min(parent.width * 0.94, 420px);
+            height: min(parent.height * 0.92, 600px);
             x: (parent.width - self.width) / 2;
             y: (parent.height - self.height) / 2;
             border-radius: 14px;
@@ -194,8 +194,8 @@ export component PokerApp inherits Window {
         }
         
         Rectangle {
-            width: min(parent.width * 0.3, 100px);
-            height: 32px;
+            width: min(parent.width * 0.28, 100px);
+            height: 34px;
             x: (parent.width - self.width) / 2;
             y: parent.height * 0.43;
             border-radius: 10px;
@@ -214,10 +214,10 @@ export component PokerApp inherits Window {
         }
         
         Rectangle {
-            width: min(parent.width * 0.9, 340px);
-            height: 56px;
+            width: min(parent.width * 0.88, 320px);
+            height: 58px;
             x: (parent.width - self.width) / 2;
-            y: parent.height * 0.26;
+            y: parent.height * 0.265;
             
             CardDisplay {
                 card_value: flop1;
@@ -230,14 +230,14 @@ export component PokerApp inherits Window {
                 card_value: flop2;
                 face_up: flop2 != "";
                 is_red: flop2_red;
-                x: 50px;
+                x: 52px;
                 y: 0;
             }
             CardDisplay {
                 card_value: flop3;
                 face_up: flop3 != "";
                 is_red: flop3_red;
-                x: 100px;
+                x: 104px;
                 y: 0;
             }
             
@@ -245,7 +245,7 @@ export component PokerApp inherits Window {
                 card_value: turn;
                 face_up: turn != "";
                 is_red: turn_red;
-                x: 155px;
+                x: 158px;
                 y: 0;
             }
             
@@ -253,7 +253,7 @@ export component PokerApp inherits Window {
                 card_value: river;
                 face_up: river != "";
                 is_red: river_red;
-                x: 205px;
+                x: 210px;
                 y: 0;
             }
         }
@@ -270,10 +270,10 @@ export component PokerApp inherits Window {
             is_folded: p2_folded;
             show_cards: show_hole_cards;
             is_dealer: dealer_position == 1;
-            x: (parent.width - min(parent.width * 0.48, 170px)) / 2;
-            y: parent.height * 0.01;
-            width: min(parent.width * 0.48, 170px);
-            height: min(parent.height * 0.22, 140px);
+            x: (parent.width - min(parent.width * 0.46, 165px)) / 2;
+            y: parent.height * 0.015;
+            width: min(parent.width * 0.46, 165px);
+            height: min(parent.height * 0.21, 140px);
         }
         
         PlayerArea {
@@ -288,15 +288,15 @@ export component PokerApp inherits Window {
             is_folded: p1_folded;
             show_cards: show_hole_cards;
             is_dealer: dealer_position == 0;
-            x: (parent.width - min(parent.width * 0.48, 170px)) / 2;
-            y: parent.height * 0.78;
-            width: min(parent.width * 0.48, 170px);
-            height: min(parent.height * 0.22, 140px);
+            x: (parent.width - min(parent.width * 0.46, 165px)) / 2;
+            y: parent.height * 0.775;
+            width: min(parent.width * 0.46, 165px);
+            height: min(parent.height * 0.21, 140px);
         }
         
         Rectangle {
-            width: min(parent.width * 0.6, 200px);
-            height: 28px;
+            width: min(parent.width * 0.55, 190px);
+            height: 30px;
             x: (parent.width - self.width) / 2;
             y: parent.height * 0.52;
             border-radius: 8px;
@@ -314,8 +314,8 @@ export component PokerApp inherits Window {
         }
         
         Rectangle {
-            width: min(parent.width * 0.28, 90px);
-            height: 22px;
+            width: min(parent.width * 0.25, 85px);
+            height: 24px;
             x: (parent.width - self.width) / 2;
             y: parent.height * 0.08;
             border-radius: 6px;
