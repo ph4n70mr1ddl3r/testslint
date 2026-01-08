@@ -340,7 +340,7 @@ export component PokerApp inherits Window {
             
             Rectangle {
                 width: min(parent.width * 0.92, 300px);
-                height: 40px;
+                height: min(parent.height * 0.08, 45px);
                 x: (parent.width - self.width) / 2;
                 y: parent.height * 0.38;
                 
@@ -350,46 +350,46 @@ export component PokerApp inherits Window {
                     is_red: flop1_red;
                     x: 0;
                     y: 0;
-                    width: min(parent.width * 0.17, 55px);
-                    height: self.width * 1.3;
+                    width: parent.width * 0.16;
+                    height: 40px;
                 }
                 CardDisplay {
                     card_value: flop2;
                     face_up: flop2 != "";
                     is_red: flop2_red;
-                    x: min(parent.width * 0.185, 60px);
+                    x: parent.width * 0.205;
                     y: 0;
-                    width: min(parent.width * 0.17, 55px);
-                    height: self.width * 1.3;
+                    width: parent.width * 0.16;
+                    height: 40px;
                 }
                 CardDisplay {
                     card_value: flop3;
                     face_up: flop3 != "";
                     is_red: flop3_red;
-                    x: min(parent.width * 0.37, 120px);
+                    x: parent.width * 0.41;
                     y: 0;
-                    width: min(parent.width * 0.17, 55px);
-                    height: self.width * 1.3;
+                    width: parent.width * 0.16;
+                    height: 40px;
                 }
                 
                 CardDisplay {
                     card_value: turn;
                     face_up: turn != "";
                     is_red: turn_red;
-                    x: min(parent.width * 0.555, 180px);
+                    x: parent.width * 0.615;
                     y: 0;
-                    width: min(parent.width * 0.17, 55px);
-                    height: self.width * 1.3;
+                    width: parent.width * 0.16;
+                    height: 40px;
                 }
                 
                 CardDisplay {
                     card_value: river;
                     face_up: river != "";
                     is_red: river_red;
-                    x: min(parent.width * 0.74, 240px);
+                    x: parent.width * 0.82;
                     y: 0;
-                    width: min(parent.width * 0.17, 55px);
-                    height: self.width * 1.3;
+                    width: parent.width * 0.16;
+                    height: 40px;
                 }
             }
             
