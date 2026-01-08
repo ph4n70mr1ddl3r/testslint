@@ -3,9 +3,6 @@ component CardDisplay inherits Rectangle {
     in property <bool> face_up: true;
     in property <bool> is_red: false;
     
-    width: 40px;
-    height: 56px;
-    
     background: face_up ? (card_value != "" ? #ffffff : #1a1a2e) : #1a1a2e;
     border-radius: 4px;
     border-width: 2px;
@@ -13,7 +10,7 @@ component CardDisplay inherits Rectangle {
     
     if face_up && card_value != "" : Text {
         text: card_value;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 700;
         color: is_red ? #dc143c : #1a1a1a;
         horizontal-alignment: center;
@@ -34,20 +31,17 @@ component PlayerArea inherits Rectangle {
     in property <bool> show_cards: true;
     in property <bool> is_dealer: false;
     
-    width: 160px;
-    height: 130px;
-    
     background: is_acting ? #4a3a00 : #2a2a2a;
     border-radius: 8px;
     border-width: 2px;
     border-color: is_acting ? #ffd700 : #444;
     
     if is_dealer : Rectangle {
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
         x: 4px;
         y: 4px;
-        border-radius: 11px;
+        border-radius: 10px;
         background: #ffffff;
         border-width: 2px;
         border-color: #ffd700;
@@ -85,14 +79,14 @@ component PlayerArea inherits Rectangle {
         font-size: 9px;
         color: #aaaaaa;
         x: (parent.width - self.width) / 2;
-        y: 36px;
+        y: 35px;
     }
     
     if show_cards && !is_folded : Rectangle {
-        x: (parent.width - 70px) / 2;
-        y: 52px;
-        width: 70px;
-        height: 50px;
+        x: (parent.width - 65px) / 2;
+        y: 50px;
+        width: 65px;
+        height: 45px;
         
         CardDisplay {
             card_value: hole_card1;
@@ -100,23 +94,19 @@ component PlayerArea inherits Rectangle {
             is_red: hole_card1_red;
             x: 0;
             y: 0;
-            width: 32px;
-            height: 46px;
         }
         CardDisplay {
             card_value: hole_card2;
             face_up: true;
             is_red: hole_card2_red;
-            x: 36px;
+            x: 32px;
             y: 0;
-            width: 32px;
-            height: 46px;
         }
     }
     
     if is_folded : Text {
         text: "FOLDED";
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
         color: #ff4444;
         x: (parent.width - self.width) / 2;
@@ -175,8 +165,8 @@ export component PokerApp inherits Window {
     in property <float> p2_current_bet: 0;
     
     title: "Poker Simulation";
-    width: 360px;
-    height: 640px;
+    min-width: 280px;
+    min-height: 500px;
     
     Rectangle {
         width: parent.width;
@@ -184,27 +174,27 @@ export component PokerApp inherits Window {
         background: #1a472a;
         
         Rectangle {
-            width: parent.width * 0.92;
-            height: parent.height * 0.9;
+            width: min(parent.width * 0.95, 380px);
+            height: min(parent.height * 0.92, 620px);
             x: (parent.width - self.width) / 2;
             y: (parent.height - self.height) / 2;
-            border-radius: 12px;
+            border-radius: 14px;
             background: #2d5a3d;
-            border-width: 5px;
+            border-width: 6px;
             border-color: #8b4513;
             
             Rectangle {
-                width: parent.width - 8px;
-                height: parent.height - 8px;
-                x: 4px;
-                y: 4px;
+                width: parent.width - 12px;
+                height: parent.height - 12px;
+                x: 6px;
+                y: 6px;
                 border-radius: 10px;
                 background: #356e4b;
             }
         }
         
         Rectangle {
-            width: 90px;
+            width: min(parent.width * 0.3, 100px);
             height: 32px;
             x: (parent.width - self.width) / 2;
             y: parent.height * 0.43;
@@ -224,7 +214,7 @@ export component PokerApp inherits Window {
         }
         
         Rectangle {
-            width: parent.width * 0.88;
+            width: min(parent.width * 0.9, 340px);
             height: 56px;
             x: (parent.width - self.width) / 2;
             y: parent.height * 0.26;
@@ -240,14 +230,14 @@ export component PokerApp inherits Window {
                 card_value: flop2;
                 face_up: flop2 != "";
                 is_red: flop2_red;
-                x: 52px;
+                x: 50px;
                 y: 0;
             }
             CardDisplay {
                 card_value: flop3;
                 face_up: flop3 != "";
                 is_red: flop3_red;
-                x: 104px;
+                x: 100px;
                 y: 0;
             }
             
@@ -255,7 +245,7 @@ export component PokerApp inherits Window {
                 card_value: turn;
                 face_up: turn != "";
                 is_red: turn_red;
-                x: 160px;
+                x: 155px;
                 y: 0;
             }
             
@@ -263,7 +253,7 @@ export component PokerApp inherits Window {
                 card_value: river;
                 face_up: river != "";
                 is_red: river_red;
-                x: 210px;
+                x: 205px;
                 y: 0;
             }
         }
@@ -280,8 +270,10 @@ export component PokerApp inherits Window {
             is_folded: p2_folded;
             show_cards: show_hole_cards;
             is_dealer: dealer_position == 1;
-            x: (parent.width - 160px) / 2;
+            x: (parent.width - min(parent.width * 0.48, 170px)) / 2;
             y: parent.height * 0.01;
+            width: min(parent.width * 0.48, 170px);
+            height: min(parent.height * 0.22, 140px);
         }
         
         PlayerArea {
@@ -296,12 +288,14 @@ export component PokerApp inherits Window {
             is_folded: p1_folded;
             show_cards: show_hole_cards;
             is_dealer: dealer_position == 0;
-            x: (parent.width - 160px) / 2;
-            y: parent.height * 0.79;
+            x: (parent.width - min(parent.width * 0.48, 170px)) / 2;
+            y: parent.height * 0.78;
+            width: min(parent.width * 0.48, 170px);
+            height: min(parent.height * 0.22, 140px);
         }
         
         Rectangle {
-            width: parent.width * 0.55;
+            width: min(parent.width * 0.6, 200px);
             height: 28px;
             x: (parent.width - self.width) / 2;
             y: parent.height * 0.52;
@@ -320,7 +314,7 @@ export component PokerApp inherits Window {
         }
         
         Rectangle {
-            width: 80px;
+            width: min(parent.width * 0.28, 90px);
             height: 22px;
             x: (parent.width - self.width) / 2;
             y: parent.height * 0.08;
