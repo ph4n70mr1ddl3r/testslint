@@ -174,8 +174,7 @@ component BetSlider inherits Rectangle {
             width: parent.width;
             height: parent.height;
             clicked => {
-                let click_x = self.pressed_x - self.x;
-                let pct = click_x / parent.width;
+                let pct = self.pressed_x / self.width;
                 let new_value = min + pct * (max - min);
                 value_changed(new_value);
             }
