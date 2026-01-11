@@ -271,7 +271,13 @@ export component PokerApp inherits Window {
     in property <float> min_bet: 0;
     in property <float> max_bet: 0;
     
+    callback start_game();
     callback bet_changed(float);
+    callback fold();
+    callback check();
+    callback call();
+    callback bet();
+    callback raise();
     
     title: "Poker Simulation";
     min-width: 320px;
@@ -476,40 +482,72 @@ export component PokerApp inherits Window {
                 height: 36px;
                 
                 ActionButton {
-                    text: "Fold";
-                    bg_color: #aa4444;
-                    enabled: can_fold;
+                    text: "Start";
+                    bg_color: #4a7a5a;
+                    enabled: true;
                     x: 0;
                     y: 0;
                     width: min(parent.width * 0.22, 70px);
                     height: 34px;
+
+                    TouchArea {
+                        width: parent.width;
+                        height: parent.height;
+                        clicked => {
+                            start_game();
+                        }
+                    }
+                }
+                ActionButton {
+                    text: "Fold";
+                    bg_color: #aa4444;
+                    enabled: can_fold;
+                    x: min(parent.width * 0.24, 76px);
+                    y: 0;
+                    width: min(parent.width * 0.22, 70px);
+                    height: 34px;
+
+                    TouchArea {
+                        width: parent.width;
+                        height: parent.height;
+                        clicked => {
+                            fold();
+                        }
+                    }
                 }
                 ActionButton {
                     text: "Check";
                     bg_color: #4a7fa5;
                     enabled: can_check;
-                    x: min(parent.width * 0.24, 76px);
+                    x: min(parent.width * 0.48, 152px);
                     y: 0;
                     width: min(parent.width * 0.22, 70px);
                     height: 34px;
+
+                    TouchArea {
+                        width: parent.width;
+                        height: parent.height;
+                        clicked => {
+                            check();
+                        }
+                    }
                 }
                 ActionButton {
                     text: "Call " + call_amount;
                     bg_color: #4a9a5a;
                     enabled: can_call;
-                    x: min(parent.width * 0.48, 152px);
+                    x: min(parent.width * 0.72, 228px);
                     y: 0;
-                    width: min(parent.width * 0.24, 76px);
+                    width: min(parent.width * 0.26, 82px);
                     height: 34px;
-                }
-                ActionButton {
-                    text: "Raise";
-                    bg_color: #9a7a4a;
-                    enabled: can_raise;
-                    x: min(parent.width * 0.74, 234px);
-                    y: 0;
-                    width: min(parent.width * 0.24, 76px);
-                    height: 34px;
+
+                    TouchArea {
+                        width: parent.width;
+                        height: parent.height;
+                        clicked => {
+                            call();
+                        }
+                    }
                 }
             }
         }
