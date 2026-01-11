@@ -270,6 +270,7 @@ export component PokerApp inherits Window {
     in-out property <float> bet_amount: 0;
     in property <float> min_bet: 0;
     in property <float> max_bet: 0;
+    in property <float> pot_odds: 0;
     
     callback start_game();
     callback bet_changed(float);
@@ -487,7 +488,7 @@ export component PokerApp inherits Window {
                     enabled: true;
                     x: 0;
                     y: 0;
-                    width: min(parent.width * 0.22, 70px);
+                    width: min(parent.width * 0.18, 60px);
                     height: 34px;
 
                     TouchArea {
@@ -502,9 +503,9 @@ export component PokerApp inherits Window {
                     text: "Fold";
                     bg_color: #aa4444;
                     enabled: can_fold;
-                    x: min(parent.width * 0.24, 76px);
+                    x: min(parent.width * 0.2, 66px);
                     y: 0;
-                    width: min(parent.width * 0.22, 70px);
+                    width: min(parent.width * 0.18, 60px);
                     height: 34px;
 
                     TouchArea {
@@ -519,9 +520,9 @@ export component PokerApp inherits Window {
                     text: "Check";
                     bg_color: #4a7fa5;
                     enabled: can_check;
-                    x: min(parent.width * 0.48, 152px);
+                    x: min(parent.width * 0.4, 132px);
                     y: 0;
-                    width: min(parent.width * 0.22, 70px);
+                    width: min(parent.width * 0.18, 60px);
                     height: 34px;
 
                     TouchArea {
@@ -533,12 +534,12 @@ export component PokerApp inherits Window {
                     }
                 }
                 ActionButton {
-                    text: "Call " + call_amount;
+                    text: "Call";
                     bg_color: #4a9a5a;
                     enabled: can_call;
-                    x: min(parent.width * 0.72, 228px);
+                    x: min(parent.width * 0.6, 198px);
                     y: 0;
-                    width: min(parent.width * 0.26, 82px);
+                    width: min(parent.width * 0.18, 60px);
                     height: 34px;
 
                     TouchArea {
@@ -548,6 +549,38 @@ export component PokerApp inherits Window {
                             call();
                         }
                     }
+                }
+                ActionButton {
+                    text: "Raise";
+                    bg_color: #9a7a4a;
+                    enabled: can_raise;
+                    x: min(parent.width * 0.8, 264px);
+                    y: 0;
+                    width: min(parent.width * 0.18, 60px);
+                    height: 34px;
+
+                    TouchArea {
+                        width: parent.width;
+                        height: parent.height;
+                        clicked => {
+                            raise();
+                        }
+                    }
+                }
+            }
+            
+            Rectangle {
+                x: 6px;
+                y: 68px;
+                width: parent.width - 12px;
+                height: 16px;
+                
+                Text {
+                    text: "Pot: " + pot_size + " | Odds: " + (pot_odds * 100).round() + "%";
+                    font-size: 9px;
+                    color: #ffd700;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
                 }
             }
         }

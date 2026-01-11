@@ -1,5 +1,5 @@
 use rand::Rng;
-use slint::{Timer, Weak};
+use slint::Weak;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -10,18 +10,11 @@ const SMALL_BLIND_CHIPS: u64 = 10;
 const BIG_BLIND_CHIPS: u64 = 20;
 const INITIAL_CHIPS: u64 = 10000;
 const MIN_CHIPS_TO_CONTINUE: u64 = 10;
-const START_DELAY_MS: u64 = 1500;
-const ACTION_DELAY_MIN_MS: u64 = 1000;
-const ACTION_DELAY_VAR_MS: u64 = 1500;
-const STREET_DELAY_MS: u64 = 2000;
-const SHOWDOWN_DELAY_MS: u64 = 3000;
-const HAND_COMPLETE_DELAY_MS: u64 = 3000;
 const MIN_BET_DEFAULT: u64 = 20;
 const MAX_BET_DEFAULT: u64 = 500;
+const MAX_BET_MULTIPLIER: u64 = 100;
 const CALL_AMOUNT_DEFAULT: u64 = 50;
-const INITIAL_POT_CHIPS: u64 = 450;
 const NUM_PLAYERS: usize = 2;
-const MAX_PLAYERS: usize = 10;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum GameStage {
@@ -524,9 +517,7 @@ pub struct PokerGame {
     current_player: usize,
     to_call: u64,
     game_weak: Weak<PokerApp>,
-    next_action_time: Option<std::time::Instant>,
     pending_action: bool,
-    timer: Rc<RefCell<Option<Timer>>>,
     game_rc: Option<Rc<RefCell<PokerGame>>>,
     all_in_this_street: bool,
     bet_amount: u64,
@@ -534,6 +525,7 @@ pub struct PokerGame {
     max_bet: u64,
     last_aggressor: Option<usize>,
     pot_commitments: Vec<u64>,
+    pot_odds: f32,
 }
 
 impl PokerGame {
@@ -555,9 +547,7 @@ impl PokerGame {
             current_player: 0,
             to_call: 0,
             game_weak,
-            next_action_time: None,
             pending_action: false,
-            timer: Rc::new(RefCell::new(None)),
             game_rc: None,
             all_in_this_street: false,
             bet_amount: CALL_AMOUNT_DEFAULT,
@@ -565,6 +555,7 @@ impl PokerGame {
             max_bet: MAX_BET_DEFAULT,
             last_aggressor: None,
             pot_commitments: vec![0; NUM_PLAYERS],
+            pot_odds: 0.0,
         }
     }
 
@@ -631,10 +622,14 @@ impl PokerGame {
     }
 
     fn update_action_bounds(&mut self) {
+        if self.players.is_empty() || self.current_player >= self.players.len() {
+            return;
+        }
+
         let current_call = self.to_call;
         let player = &self.players[self.current_player];
 
-        let min_raise = current_call * 2;
+        let min_raise = current_call.saturating_mul(2);
         let player_chips = player.get_chips();
 
         self.min_bet = if current_call == 0 {
@@ -643,13 +638,23 @@ impl PokerGame {
             min_raise
         };
 
-        self.max_bet = std::cmp::min(player_chips, MAX_BET_DEFAULT as u64 * 100);
+        self.max_bet = std::cmp::min(
+            player_chips,
+            MAX_BET_DEFAULT.saturating_mul(MAX_BET_MULTIPLIER),
+        );
 
         if self.bet_amount < self.min_bet {
             self.bet_amount = self.min_bet;
         }
         if self.bet_amount > self.max_bet {
             self.bet_amount = self.max_bet;
+        }
+
+        let call_amount = self.to_call.saturating_sub(player.get_current_bet());
+        if call_amount > 0 && self.pot > 0 {
+            self.pot_odds = call_amount as f32 / (self.pot + call_amount) as f32;
+        } else {
+            self.pot_odds = 0.0;
         }
     }
 
@@ -939,7 +944,7 @@ impl PokerGame {
         self.update_ui(message);
     }
 
-    pub fn update_ui(&self, message: String) {
+    pub fn update_ui(&mut self, message: String) {
         if let Some(ui) = self.game_weak.upgrade() {
             if self.players.len() > 0 {
                 ui.set_player1_name(self.players[0].get_name().into());
@@ -954,6 +959,7 @@ impl PokerGame {
                 ui.set_p2_folded(self.players[1].is_folded());
             }
             ui.set_pot_size(self.pot as f32);
+            ui.set_pot_odds(self.pot_odds);
             ui.set_game_stage(self.get_stage_string().into());
             ui.set_dealer_position(self.dealer_position as i32);
             ui.set_message(message.into());
@@ -1069,7 +1075,7 @@ impl PokerGame {
         }
     }
 
-    fn update_action_controls(&self, ui: &PokerApp) {
+    fn update_action_controls(&mut self, ui: &PokerApp) {
         let player = self.players.get(self.current_player);
         let can_check = player
             .map(|p| p.get_current_bet() >= self.to_call)
@@ -1098,6 +1104,14 @@ impl PokerGame {
         ui.set_bet_amount(self.bet_amount as f32);
         ui.set_min_bet(self.min_bet as f32);
         ui.set_max_bet(self.max_bet as f32);
+
+        let total_pot = self.pot.saturating_add(call_amount);
+        if call_amount > 0 && total_pot > 0 {
+            self.pot_odds = call_amount as f32 / total_pot as f32;
+        } else {
+            self.pot_odds = 0.0;
+        }
+        ui.set_pot_odds(self.pot_odds);
     }
 
     pub fn set_bet_amount(&mut self, amount: f32) {
@@ -1129,6 +1143,7 @@ fn main() {
     app.set_bet_amount(CALL_AMOUNT_DEFAULT as f32);
     app.set_min_bet(MIN_BET_DEFAULT as f32);
     app.set_max_bet(MAX_BET_DEFAULT as f32);
+    app.set_pot_odds(0.0);
     app.set_call_amount(0.0);
     app.set_can_check(false);
     app.set_can_call(false);
