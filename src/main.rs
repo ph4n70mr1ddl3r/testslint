@@ -317,7 +317,7 @@ impl PokerHandEvaluator {
             return EvaluatedHand::new(HandRank::HighCard, Vec::new(), Vec::new());
         }
 
-        let mut ranks: Vec<u8> = all_cards.iter().map(|c: &Card| c.rank).collect();
+        let mut ranks: Vec<u8> = all_cards.iter().map(|c| c.rank).collect();
         ranks.sort_unstable_by(|a, b| b.cmp(a));
         let ranks_dedup: Vec<u8> = ranks
             .iter()
@@ -325,7 +325,7 @@ impl PokerHandEvaluator {
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
             .collect();
-        let suits: Vec<Suit> = all_cards.iter().map(|c: &Card| c.suit).collect();
+        let suits: Vec<Suit> = all_cards.iter().map(|c| c.suit).collect();
 
         let suit_counts: std::collections::HashMap<Suit, usize> =
             suits.iter().fold(HashMap::new(), |mut map, &suit| {
@@ -383,8 +383,8 @@ impl PokerHandEvaluator {
         if let Some(suit) = flush_suit {
             let mut flush_cards: Vec<u8> = all_cards
                 .iter()
-                .filter(|c: &&Card| c.suit == suit)
-                .map(|c: &Card| c.rank)
+                .filter(|c| c.suit == suit)
+                .map(|c| c.rank)
                 .collect();
             flush_cards.sort_unstable_by(|a, b| b.cmp(a));
             let flush_cards: Vec<u8> = flush_cards.into_iter().take(5).collect();
