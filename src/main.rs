@@ -114,7 +114,7 @@ impl Card {
     }
 
     pub fn from_string(s: &str) -> Option<Self> {
-        if s.len() < 2 {
+        if s.chars().count() < 2 {
             return None;
         }
 
@@ -319,12 +319,11 @@ impl PokerHandEvaluator {
 
         let mut ranks: Vec<u8> = all_cards.iter().map(|c| c.rank).collect();
         ranks.sort_unstable_by(|a, b| b.cmp(a));
-        let ranks_dedup: Vec<u8> = ranks
-            .iter()
-            .copied()
-            .collect::<std::collections::HashSet<_>>()
-            .into_iter()
-            .collect();
+        let ranks_dedup: Vec<u8> = {
+            let mut deduped = ranks.clone();
+            deduped.dedup();
+            deduped
+        };
         let suits: Vec<Suit> = all_cards.iter().map(|c| c.suit).collect();
 
         let suit_counts: std::collections::HashMap<Suit, usize> =
