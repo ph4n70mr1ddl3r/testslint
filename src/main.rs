@@ -327,21 +327,17 @@ impl PokerHandEvaluator {
             .collect();
         let suits: Vec<Suit> = all_cards.iter().map(|c: &Card| c.suit).collect();
 
-        let suit_counts: std::collections::HashMap<Suit, usize> = suits.iter().fold(
-            HashMap::new(),
-            |mut map: std::collections::HashMap<Suit, usize>, &suit| {
+        let suit_counts: std::collections::HashMap<Suit, usize> =
+            suits.iter().fold(HashMap::new(), |mut map, &suit| {
                 *map.entry(suit).or_insert(0) += 1;
                 map
-            },
-        );
+            });
 
-        let rank_counts: std::collections::HashMap<u8, usize> = ranks.iter().fold(
-            HashMap::new(),
-            |mut map: std::collections::HashMap<u8, usize>, &rank| {
+        let rank_counts: std::collections::HashMap<u8, usize> =
+            ranks.iter().fold(HashMap::new(), |mut map, &rank| {
                 *map.entry(rank).or_insert(0) += 1;
                 map
-            },
-        );
+            });
 
         let four_of_kind: Vec<u8> = rank_counts
             .iter()
@@ -524,7 +520,6 @@ pub struct PokerGame {
     game_weak: Weak<PokerApp>,
     pending_action: bool,
     game_rc: Option<Rc<RefCell<PokerGame>>>,
-    all_in_this_street: bool,
     bet_amount: u64,
     min_bet: u64,
     max_bet: u64,
@@ -554,7 +549,6 @@ impl PokerGame {
             game_weak,
             pending_action: false,
             game_rc: None,
-            all_in_this_street: false,
             bet_amount: CALL_AMOUNT_DEFAULT,
             min_bet: MIN_BET_DEFAULT,
             max_bet: MAX_BET_DEFAULT,
@@ -596,7 +590,6 @@ impl PokerGame {
 
         self.pot = 0;
         self.pot_commitments = vec![0; self.players.len()];
-        self.all_in_this_street = false;
         self.last_aggressor = None;
 
         self.post_blinds()?;
@@ -786,7 +779,6 @@ impl PokerGame {
             .collect();
 
         if active_players.is_empty() {
-            self.all_in_this_street = true;
             self.advance_street();
             return;
         }
@@ -957,7 +949,7 @@ impl PokerGame {
                 ui.set_p1_current_bet(self.players[0].get_current_bet() as f32);
                 ui.set_p1_folded(self.players[0].is_folded());
             }
-            if self.players.len() > 1 {
+            if !self.players.is_empty() {
                 ui.set_player2_name(self.players[1].get_name().into());
                 ui.set_player2_chips(self.players[1].get_chips() as f32);
                 ui.set_p2_current_bet(self.players[1].get_current_bet() as f32);
@@ -996,7 +988,7 @@ impl PokerGame {
             ui.set_p1_card1_red(self.hole_card_red(0, 0));
             ui.set_p1_card2_red(self.hole_card_red(0, 1));
         }
-        if self.players.len() > 1 {
+        if !self.players.is_empty() {
             ui.set_p2_card1(self.hole_card_string(1, 0));
             ui.set_p2_card2(self.hole_card_string(1, 1));
             ui.set_p2_card1_red(self.hole_card_red(1, 0));
@@ -1004,22 +996,23 @@ impl PokerGame {
         }
     }
 
+    fn get_hole_card(&self, player_idx: usize, card_idx: usize) -> Option<&Card> {
+        self.players
+            .get(player_idx)
+            .and_then(|p| p.get_hole_cards().get(card_idx))
+    }
+
     fn hole_card_string(&self, player_idx: usize, card_idx: usize) -> slint::SharedString {
-        if player_idx < self.players.len() {
-            if let Some(card) = self.players[player_idx].get_hole_cards().get(card_idx) {
-                return card.to_string().into();
-            }
-        }
-        "".into()
+        self.get_hole_card(player_idx, card_idx)
+            .map(|c| c.to_string())
+            .unwrap_or_default()
+            .into()
     }
 
     fn hole_card_red(&self, player_idx: usize, card_idx: usize) -> bool {
-        if player_idx < self.players.len() {
-            if let Some(card) = self.players[player_idx].get_hole_cards().get(card_idx) {
-                return card.is_red();
-            }
-        }
-        false
+        self.get_hole_card(player_idx, card_idx)
+            .map(|c| c.is_red())
+            .unwrap_or(false)
     }
 
     fn update_community_cards(&self, ui: &PokerApp) {
@@ -1075,7 +1068,7 @@ impl PokerGame {
         if !self.players.is_empty() {
             ui.set_p1_acting(self.current_player == 0 && !self.players[0].is_folded());
         }
-        if self.players.len() > 1 {
+        if !self.players.is_empty() {
             ui.set_p2_acting(self.current_player == 1 && !self.players[1].is_folded());
         }
     }
