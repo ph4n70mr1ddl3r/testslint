@@ -309,7 +309,7 @@ pub struct PokerHandEvaluator;
 
 impl PokerHandEvaluator {
     pub fn evaluate(hole_cards: &[Card], community_cards: &[Card]) -> EvaluatedHand {
-        let mut all_cards: Vec<Card> = Vec::with_capacity(7);
+        let mut all_cards: Vec<Card> = Vec::with_capacity(5);
         all_cards.extend(hole_cards);
         all_cards.extend(community_cards);
 
@@ -467,18 +467,8 @@ impl PokerHandEvaluator {
         let mut sorted_ranks: Vec<u8> = ranks.to_vec();
         sorted_ranks.sort_unstable();
 
-        for i in 0..=sorted_ranks.len() - 5 {
-            let window = &sorted_ranks[i..i + 5];
-            let mut is_consecutive = true;
-            for j in 0..4 {
-                if window[j + 1] != window[j] + 1 {
-                    is_consecutive = false;
-                    break;
-                }
-            }
-            if is_consecutive {
-                return true;
-            }
+        if Self::has_consecutive_window(&sorted_ranks, 5) {
+            return true;
         }
 
         if sorted_ranks.contains(&14) {
@@ -488,21 +478,21 @@ impl PokerHandEvaluator {
                 .copied()
                 .chain(std::iter::once(1))
                 .collect();
-            for i in 0..=ace_low_ranks.len() - 5 {
-                let window = &ace_low_ranks[i..i + 5];
-                let mut is_consecutive = true;
-                for j in 0..4 {
-                    if window[j + 1] != window[j] + 1 {
-                        is_consecutive = false;
-                        break;
-                    }
-                }
-                if is_consecutive {
-                    return true;
-                }
+            if Self::has_consecutive_window(&ace_low_ranks, 5) {
+                return true;
             }
         }
 
+        false
+    }
+
+    fn has_consecutive_window(ranks: &[u8], window_size: usize) -> bool {
+        for i in 0..=ranks.len().saturating_sub(window_size) {
+            let window = &ranks[i..i + window_size];
+            if window.windows(2).all(|w| w[1] == w[0] + 1) {
+                return true;
+            }
+        }
         false
     }
 }
