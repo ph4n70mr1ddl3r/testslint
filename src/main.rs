@@ -320,7 +320,7 @@ impl PokerHandEvaluator {
         let mut ranks: Vec<u8> = all_cards.iter().map(|c| c.rank).collect();
         ranks.sort_unstable_by(|a, b| b.cmp(a));
         let ranks_dedup: Vec<u8> = {
-            let mut deduped = ranks.clone();
+            let mut deduped = ranks.to_vec();
             deduped.dedup();
             deduped
         };
@@ -363,11 +363,11 @@ impl PokerHandEvaluator {
             let three_rank = full_house_ranks
                 .iter()
                 .find(|&&r| rank_counts[&r] >= 3)
-                .unwrap();
+                .expect("Full house should have a three of a kind");
             let pair_rank = full_house_ranks
                 .iter()
                 .find(|&&r| r != *three_rank && rank_counts[&r] >= 2)
-                .unwrap();
+                .expect("Full house should have a pair");
             return EvaluatedHand::new(
                 HandRank::FullHouse,
                 vec![*three_rank, *pair_rank],
