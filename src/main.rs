@@ -318,7 +318,7 @@ impl PokerHandEvaluator {
         }
 
         let mut ranks: Vec<u8> = all_cards.iter().map(|c: &Card| c.rank).collect();
-        ranks.sort_unstable_by(|a: &u8, b: &u8| b.cmp(a));
+        ranks.sort_unstable_by(|a, b| b.cmp(a));
         let ranks_dedup: Vec<u8> = ranks
             .iter()
             .copied()
@@ -386,7 +386,7 @@ impl PokerHandEvaluator {
                 .filter(|c: &&Card| c.suit == suit)
                 .map(|c: &Card| c.rank)
                 .collect();
-            flush_cards.sort_unstable_by(|a: &u8, b: &u8| b.cmp(a));
+            flush_cards.sort_unstable_by(|a, b| b.cmp(a));
             let flush_cards: Vec<u8> = flush_cards.into_iter().take(5).collect();
 
             let is_straight = Self::check_straight(&flush_cards);
@@ -432,7 +432,7 @@ impl PokerHandEvaluator {
             .collect();
         if two_pairs.len() >= 2 {
             let mut pairs = two_pairs;
-            pairs.sort_unstable_by(|a: &u8, b: &u8| b.cmp(a));
+            pairs.sort_unstable_by(|a, b| b.cmp(a));
             let pair1 = pairs[0];
             let pair2 = pairs[1];
             let kicker: Vec<u8> = ranks
@@ -943,13 +943,12 @@ impl PokerGame {
 
     pub fn update_ui(&mut self, message: String) {
         if let Some(ui) = self.game_weak.upgrade() {
-            if !self.players.is_empty() {
+            let has_players = !self.players.is_empty();
+            if has_players {
                 ui.set_player1_name(self.players[0].get_name().into());
                 ui.set_player1_chips(self.players[0].get_chips() as f32);
                 ui.set_p1_current_bet(self.players[0].get_current_bet() as f32);
                 ui.set_p1_folded(self.players[0].is_folded());
-            }
-            if !self.players.is_empty() {
                 ui.set_player2_name(self.players[1].get_name().into());
                 ui.set_player2_chips(self.players[1].get_chips() as f32);
                 ui.set_p2_current_bet(self.players[1].get_current_bet() as f32);
@@ -982,13 +981,12 @@ impl PokerGame {
     }
 
     fn update_player_cards(&self, ui: &PokerApp) {
-        if !self.players.is_empty() {
+        let has_players = !self.players.is_empty();
+        if has_players {
             ui.set_p1_card1(self.hole_card_string(0, 0));
             ui.set_p1_card2(self.hole_card_string(0, 1));
             ui.set_p1_card1_red(self.hole_card_red(0, 0));
             ui.set_p1_card2_red(self.hole_card_red(0, 1));
-        }
-        if !self.players.is_empty() {
             ui.set_p2_card1(self.hole_card_string(1, 0));
             ui.set_p2_card2(self.hole_card_string(1, 1));
             ui.set_p2_card1_red(self.hole_card_red(1, 0));
@@ -1065,10 +1063,9 @@ impl PokerGame {
     }
 
     fn update_player_status(&self, ui: &PokerApp) {
-        if !self.players.is_empty() {
+        let has_players = !self.players.is_empty();
+        if has_players {
             ui.set_p1_acting(self.current_player == 0 && !self.players[0].is_folded());
-        }
-        if !self.players.is_empty() {
             ui.set_p2_acting(self.current_player == 1 && !self.players[1].is_folded());
         }
     }
