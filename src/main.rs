@@ -80,10 +80,7 @@ impl Suit {
     }
 
     pub fn is_red(self) -> bool {
-        match self {
-            Suit::Hearts | Suit::Diamonds => true,
-            _ => false,
-        }
+        matches!(self, Suit::Hearts | Suit::Diamonds)
     }
 }
 
@@ -93,21 +90,23 @@ pub struct Card {
     pub suit: Suit,
 }
 
+impl std::fmt::Display for Card {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let rank_str = match self.rank {
+            14 => "A",
+            13 => "K",
+            12 => "Q",
+            11 => "J",
+            10 => "10",
+            n => return write!(f, "{}{}", n, self.suit.to_char()),
+        };
+        write!(f, "{}{}", rank_str, self.suit.to_char())
+    }
+}
+
 impl Card {
     pub fn new(rank: u8, suit: Suit) -> Self {
         Card { rank, suit }
-    }
-
-    pub fn to_string(&self) -> String {
-        let rank_str = match self.rank {
-            14 => "A".to_string(),
-            13 => "K".to_string(),
-            12 => "Q".to_string(),
-            11 => "J".to_string(),
-            10 => "10".to_string(),
-            _ => self.rank.to_string(),
-        };
-        format!("{}{}", rank_str, self.suit.to_char())
     }
 
     pub fn is_red(self) -> bool {
@@ -144,6 +143,12 @@ impl Card {
 #[derive(Clone)]
 pub struct Deck {
     cards: Vec<Card>,
+}
+
+impl Default for Deck {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Deck {
@@ -659,7 +664,7 @@ impl PokerGame {
     }
 
     pub fn perform_action(&mut self, action: PlayerAction) -> Result<(), &'static str> {
-        if self.pending_action == false {
+        if !self.pending_action {
             return Err("No pending action");
         }
 
@@ -946,7 +951,7 @@ impl PokerGame {
 
     pub fn update_ui(&mut self, message: String) {
         if let Some(ui) = self.game_weak.upgrade() {
-            if self.players.len() > 0 {
+            if !self.players.is_empty() {
                 ui.set_player1_name(self.players[0].get_name().into());
                 ui.set_player1_chips(self.players[0].get_chips() as f32);
                 ui.set_p1_current_bet(self.players[0].get_current_bet() as f32);
@@ -985,7 +990,7 @@ impl PokerGame {
     }
 
     fn update_player_cards(&self, ui: &PokerApp) {
-        if self.players.len() > 0 {
+        if !self.players.is_empty() {
             ui.set_p1_card1(self.hole_card_string(0, 0));
             ui.set_p1_card2(self.hole_card_string(0, 1));
             ui.set_p1_card1_red(self.hole_card_red(0, 0));
@@ -1025,7 +1030,7 @@ impl PokerGame {
 
         ui.set_flop1(
             community_cards
-                .get(0)
+                .first()
                 .map(|s| s.as_str())
                 .unwrap_or("")
                 .into(),
@@ -1059,7 +1064,7 @@ impl PokerGame {
                 .into(),
         );
 
-        ui.set_flop1_red(community_cards_red.get(0).copied().unwrap_or(false));
+        ui.set_flop1_red(community_cards_red.first().copied().unwrap_or(false));
         ui.set_flop2_red(community_cards_red.get(1).copied().unwrap_or(false));
         ui.set_flop3_red(community_cards_red.get(2).copied().unwrap_or(false));
         ui.set_turn_red(community_cards_red.get(3).copied().unwrap_or(false));
@@ -1067,7 +1072,7 @@ impl PokerGame {
     }
 
     fn update_player_status(&self, ui: &PokerApp) {
-        if self.players.len() > 0 {
+        if !self.players.is_empty() {
             ui.set_p1_acting(self.current_player == 0 && !self.players[0].is_folded());
         }
         if self.players.len() > 1 {
