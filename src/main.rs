@@ -326,13 +326,13 @@ impl PokerHandEvaluator {
         };
         let suits: Vec<Suit> = all_cards.iter().map(|c| c.suit).collect();
 
-        let suit_counts: std::collections::HashMap<Suit, usize> =
+        let suit_counts: HashMap<Suit, usize> =
             suits.iter().fold(HashMap::new(), |mut map, &suit| {
                 *map.entry(suit).or_insert(0) += 1;
                 map
             });
 
-        let rank_counts: std::collections::HashMap<u8, usize> =
+        let rank_counts: HashMap<u8, usize> =
             ranks.iter().fold(HashMap::new(), |mut map, &rank| {
                 *map.entry(rank).or_insert(0) += 1;
                 map
@@ -360,19 +360,15 @@ impl PokerHandEvaluator {
             .map(|(&rank, _)| rank)
             .collect();
         if full_house_ranks.len() >= 2 {
-            let three_rank = full_house_ranks
-                .iter()
-                .find(|&&r| rank_counts[&r] >= 3)
-                .expect("Full house should have a three of a kind");
-            let pair_rank = full_house_ranks
-                .iter()
-                .find(|&&r| r != *three_rank && rank_counts[&r] >= 2)
-                .expect("Full house should have a pair");
-            return EvaluatedHand::new(
-                HandRank::FullHouse,
-                vec![*three_rank, *pair_rank],
-                Vec::new(),
-            );
+            let three_rank = full_house_ranks.iter().find(|&&r| rank_counts[&r] >= 3);
+            if let Some(&three) = three_rank {
+                let pair_rank = full_house_ranks
+                    .iter()
+                    .find(|&&r| r != three && rank_counts[&r] >= 2);
+                if let Some(&pair) = pair_rank {
+                    return EvaluatedHand::new(HandRank::FullHouse, vec![three, pair], Vec::new());
+                }
+            }
         }
 
         let flush_suit = suit_counts
@@ -1366,5 +1362,57 @@ mod tests {
 
         let evaluated = PokerHandEvaluator::evaluate(&hole_cards, &community_cards);
         assert_eq!(evaluated.rank, HandRank::FourOfAKind);
+    }
+
+    #[test]
+    fn test_hand_evaluator_straight_flush() {
+        let hole_cards = vec![Card::new(6, Suit::Hearts), Card::new(7, Suit::Hearts)];
+        let community_cards = vec![
+            Card::new(8, Suit::Hearts),
+            Card::new(9, Suit::Hearts),
+            Card::new(10, Suit::Hearts),
+        ];
+
+        let evaluated = PokerHandEvaluator::evaluate(&hole_cards, &community_cards);
+        assert_eq!(evaluated.rank, HandRank::StraightFlush);
+    }
+
+    #[test]
+    fn test_hand_evaluator_royal_flush() {
+        let hole_cards = vec![Card::new(10, Suit::Hearts), Card::new(14, Suit::Hearts)];
+        let community_cards = vec![
+            Card::new(11, Suit::Hearts),
+            Card::new(12, Suit::Hearts),
+            Card::new(13, Suit::Hearts),
+        ];
+
+        let evaluated = PokerHandEvaluator::evaluate(&hole_cards, &community_cards);
+        assert_eq!(evaluated.rank, HandRank::RoyalFlush);
+    }
+
+    #[test]
+    fn test_hand_evaluator_two_pair() {
+        let hole_cards = vec![Card::new(5, Suit::Spades), Card::new(10, Suit::Hearts)];
+        let community_cards = vec![
+            Card::new(5, Suit::Diamonds),
+            Card::new(10, Suit::Clubs),
+            Card::new(12, Suit::Spades),
+        ];
+
+        let evaluated = PokerHandEvaluator::evaluate(&hole_cards, &community_cards);
+        assert_eq!(evaluated.rank, HandRank::TwoPair);
+    }
+
+    #[test]
+    fn test_hand_evaluator_three_of_a_kind() {
+        let hole_cards = vec![Card::new(5, Suit::Spades), Card::new(8, Suit::Hearts)];
+        let community_cards = vec![
+            Card::new(5, Suit::Diamonds),
+            Card::new(5, Suit::Clubs),
+            Card::new(12, Suit::Spades),
+        ];
+
+        let evaluated = PokerHandEvaluator::evaluate(&hole_cards, &community_cards);
+        assert_eq!(evaluated.rank, HandRank::ThreeOfAKind);
     }
 }
