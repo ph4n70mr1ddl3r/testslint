@@ -420,13 +420,13 @@ impl PokerHandEvaluator {
             return EvaluatedHand::new(HandRank::ThreeOfAKind, vec![three_rank], kickers);
         }
 
-        let two_pairs: Vec<u8> = rank_counts
+        let two_pair_ranks: Vec<u8> = rank_counts
             .iter()
             .filter(|(_, &count)| count == 2)
             .map(|(&rank, _)| rank)
             .collect();
-        if two_pairs.len() >= 2 {
-            let mut pairs = two_pairs;
+        if two_pair_ranks.len() >= 2 {
+            let mut pairs = two_pair_ranks;
             pairs.sort_unstable_by(|a, b| b.cmp(a));
             let pair1 = pairs[0];
             let pair2 = pairs[1];
@@ -439,8 +439,8 @@ impl PokerHandEvaluator {
             return EvaluatedHand::new(HandRank::TwoPair, vec![pair1, pair2], kicker);
         }
 
-        if two_pairs.len() == 1 {
-            let pair_rank = two_pairs[0];
+        if two_pair_ranks.len() == 1 {
+            let pair_rank = two_pair_ranks[0];
             let kickers: Vec<u8> = ranks
                 .iter()
                 .copied()
@@ -467,12 +467,12 @@ impl PokerHandEvaluator {
         }
 
         if sorted_ranks.contains(&14) {
-            let ace_low_ranks: Vec<u8> = sorted_ranks
+            let mut ace_low_ranks: Vec<u8> = sorted_ranks
                 .iter()
-                .filter(|&&r| r != 14)
                 .copied()
-                .chain(std::iter::once(1))
+                .map(|r| if r == 14 { 1 } else { r })
                 .collect();
+            ace_low_ranks.sort_unstable();
             if Self::has_consecutive_window(&ace_low_ranks, 5) {
                 return true;
             }
@@ -631,13 +631,6 @@ impl PokerGame {
         }
         if self.bet_amount > self.max_bet {
             self.bet_amount = self.max_bet;
-        }
-
-        let call_amount = self.to_call.saturating_sub(player.get_current_bet());
-        if call_amount > 0 && self.pot > 0 {
-            self.pot_odds = call_amount as f32 / (self.pot + call_amount) as f32;
-        } else {
-            self.pot_odds = 0.0;
         }
     }
 
@@ -1414,5 +1407,18 @@ mod tests {
 
         let evaluated = PokerHandEvaluator::evaluate(&hole_cards, &community_cards);
         assert_eq!(evaluated.rank, HandRank::ThreeOfAKind);
+    }
+
+    #[test]
+    fn test_hand_evaluator_ace_low_straight() {
+        let hole_cards = vec![Card::new(2, Suit::Spades), Card::new(3, Suit::Hearts)];
+        let community_cards = vec![
+            Card::new(4, Suit::Diamonds),
+            Card::new(5, Suit::Clubs),
+            Card::new(14, Suit::Spades),
+        ];
+
+        let evaluated = PokerHandEvaluator::evaluate(&hole_cards, &community_cards);
+        assert_eq!(evaluated.rank, HandRank::Straight);
     }
 }
