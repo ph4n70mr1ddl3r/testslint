@@ -384,17 +384,18 @@ impl PokerHandEvaluator {
                 .map(|c| c.rank)
                 .collect();
             flush_cards.sort_unstable_by(|a, b| b.cmp(a));
-            let flush_cards: Vec<u8> = flush_cards.into_iter().take(5).collect();
 
             let is_straight = Self::check_straight(&flush_cards);
+            let top_flush_cards: Vec<u8> = flush_cards.into_iter().take(5).collect();
+
             if is_straight {
-                if flush_cards[0] == 14 && flush_cards[1] == 13 {
+                if top_flush_cards[0] == 14 && top_flush_cards[1] == 13 {
                     return EvaluatedHand::new(HandRank::RoyalFlush, vec![14], Vec::new());
                 }
-                return EvaluatedHand::new(HandRank::StraightFlush, flush_cards, Vec::new());
+                return EvaluatedHand::new(HandRank::StraightFlush, top_flush_cards, Vec::new());
             }
 
-            return EvaluatedHand::new(HandRank::Flush, flush_cards, Vec::new());
+            return EvaluatedHand::new(HandRank::Flush, top_flush_cards, Vec::new());
         }
 
         let straight = Self::check_straight(&ranks_dedup);
@@ -763,11 +764,6 @@ impl PokerGame {
 
         if all_folded {
             self.end_hand("All opponents folded".to_string());
-            return;
-        }
-
-        if active_players.is_empty() {
-            self.advance_street();
             return;
         }
 
