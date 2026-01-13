@@ -218,6 +218,11 @@ impl Player {
         self.hole_cards.extend(cards);
     }
 
+    /// Place a bet, deducting chips from player's stack.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err("Insufficient chips")` if the bet amount exceeds available chips.
     pub fn bet(&mut self, amount: u64) -> Result<u64, &'static str> {
         if amount > self.chips {
             return Err("Insufficient chips");
@@ -320,7 +325,7 @@ impl PokerHandEvaluator {
         let mut ranks: Vec<u8> = all_cards.iter().map(|c| c.rank).collect();
         ranks.sort_unstable_by(|a, b| b.cmp(a));
         let ranks_dedup: Vec<u8> = {
-            let mut deduped = ranks.to_vec();
+            let mut deduped = ranks.clone();
             deduped.dedup();
             deduped
         };
@@ -428,15 +433,15 @@ impl PokerHandEvaluator {
         if two_pair_ranks.len() >= 2 {
             let mut pairs = two_pair_ranks;
             pairs.sort_unstable_by(|a, b| b.cmp(a));
-            let pair1 = pairs[0];
-            let pair2 = pairs[1];
+            let first_pair = pairs[0];
+            let second_pair = pairs[1];
             let kicker: Vec<u8> = ranks
                 .iter()
                 .copied()
-                .filter(|&r| r != pair1 && r != pair2)
+                .filter(|&r| r != first_pair && r != second_pair)
                 .take(1)
                 .collect();
-            return EvaluatedHand::new(HandRank::TwoPair, vec![pair1, pair2], kicker);
+            return EvaluatedHand::new(HandRank::TwoPair, vec![first_pair, second_pair], kicker);
         }
 
         if two_pair_ranks.len() == 1 {
@@ -543,6 +548,12 @@ impl PokerGame {
         }
     }
 
+    /// Start a new hand, dealing cards to all players.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err("Not enough players with sufficient chips")` if fewer than 2 players
+    /// have at least MIN_CHIPS_TO_CONTINUE chips.
     pub fn start_new_hand(&mut self) -> Result<(), &'static str> {
         if self
             .players
@@ -634,6 +645,11 @@ impl PokerGame {
         }
     }
 
+    /// Process a player's action (fold, check, call, bet, raise, all-in).
+    ///
+    /// # Errors
+    ///
+    /// Returns various errors based on the action type and game state.
     pub fn perform_action(&mut self, action: PlayerAction) -> Result<(), &'static str> {
         if !self.pending_action {
             return Err("No pending action");
@@ -653,7 +669,7 @@ impl PokerGame {
         match action {
             PlayerAction::Fold => {
                 self.players[player_idx].set_folded(true);
-                self.update_ui(format!("{} folded", player_name));
+                self.update_ui(format!("{player_name} folded"));
             }
 
             PlayerAction::Check => {
@@ -661,7 +677,7 @@ impl PokerGame {
                     return Err("Cannot check when a bet is pending");
                 }
                 self.players[player_idx].set_has_acted(true);
-                self.update_ui(format!("{} checked", player_name));
+                self.update_ui(format!("{player_name} checked"));
             }
 
             PlayerAction::Call => {
@@ -670,7 +686,7 @@ impl PokerGame {
                 self.pot += actual_call;
                 self.pot_commitments[player_idx] += actual_call;
                 self.players[player_idx].set_has_acted(true);
-                self.update_ui(format!("{} called {}", player_name, actual_call));
+                self.update_ui(format!("{player_name} called {actual_call}"));
             }
 
             PlayerAction::Bet => {
@@ -683,7 +699,7 @@ impl PokerGame {
                 self.pot += bet_amount;
                 self.pot_commitments[player_idx] += bet_amount;
                 self.last_aggressor = Some(player_idx);
-                self.update_ui(format!("{} bet {}", player_name, bet_amount));
+                self.update_ui(format!("{player_name} bet {bet_amount}"));
             }
 
             PlayerAction::Raise => {
@@ -697,7 +713,7 @@ impl PokerGame {
                 self.pot += raise_amount;
                 self.pot_commitments[player_idx] += raise_amount;
                 self.last_aggressor = Some(player_idx);
-                self.update_ui(format!("{} raised to {}", player_name, total_bet));
+                self.update_ui(format!("{player_name} raised to {total_bet}"));
             }
 
             PlayerAction::AllIn => {
@@ -709,10 +725,7 @@ impl PokerGame {
                     self.to_call = current_bet + all_in_amount;
                     self.last_aggressor = Some(player_idx);
                 }
-                self.update_ui(format!(
-                    "{} went all-in with {}",
-                    player_name, all_in_amount
-                ));
+                self.update_ui(format!("{player_name} went all-in with {all_in_amount}"));
             }
         }
 
@@ -980,7 +993,7 @@ impl PokerGame {
 
     fn hole_card_string(&self, player_idx: usize, card_idx: usize) -> slint::SharedString {
         self.get_hole_card(player_idx, card_idx)
-            .map(|c| c.to_string())
+            .map(ToString::to_string)
             .unwrap_or_default()
             .into()
     }
@@ -992,46 +1005,19 @@ impl PokerGame {
     }
 
     fn update_community_cards(&self, ui: &PokerApp) {
-        let community_cards: Vec<String> =
-            self.community_cards.iter().map(|c| c.to_string()).collect();
+        let community_cards: Vec<String> = self
+            .community_cards
+            .iter()
+            .map(ToString::to_string)
+            .collect();
         let community_cards_red: Vec<bool> =
             self.community_cards.iter().map(|c| c.is_red()).collect();
 
-        ui.set_flop1(
-            community_cards
-                .first()
-                .map(|s| s.as_str())
-                .unwrap_or("")
-                .into(),
-        );
-        ui.set_flop2(
-            community_cards
-                .get(1)
-                .map(|s| s.as_str())
-                .unwrap_or("")
-                .into(),
-        );
-        ui.set_flop3(
-            community_cards
-                .get(2)
-                .map(|s| s.as_str())
-                .unwrap_or("")
-                .into(),
-        );
-        ui.set_turn(
-            community_cards
-                .get(3)
-                .map(|s| s.as_str())
-                .unwrap_or("")
-                .into(),
-        );
-        ui.set_river(
-            community_cards
-                .get(4)
-                .map(|s| s.as_str())
-                .unwrap_or("")
-                .into(),
-        );
+        ui.set_flop1(community_cards.first().map_or("", String::as_str).into());
+        ui.set_flop2(community_cards.get(1).map_or("", String::as_str).into());
+        ui.set_flop3(community_cards.get(2).map_or("", String::as_str).into());
+        ui.set_turn(community_cards.get(3).map_or("", String::as_str).into());
+        ui.set_river(community_cards.get(4).map_or("", String::as_str).into());
 
         ui.set_flop1_red(community_cards_red.first().copied().unwrap_or(false));
         ui.set_flop2_red(community_cards_red.get(1).copied().unwrap_or(false));
@@ -1050,19 +1036,13 @@ impl PokerGame {
 
     fn update_action_controls(&mut self, ui: &PokerApp) {
         let player = self.players.get(self.current_player);
-        let can_check = player
-            .map(|p| p.get_current_bet() >= self.to_call)
-            .unwrap_or(false);
-        let can_call = player
-            .map(|p| p.get_chips() > 0 && p.get_current_bet() < self.to_call)
-            .unwrap_or(false);
-        let can_bet = player
-            .map(|p| p.get_chips() > 0 && self.to_call == 0)
-            .unwrap_or(false);
-        let can_raise = player
-            .map(|p| p.get_chips() > 0 && p.get_current_bet() < self.to_call)
-            .unwrap_or(false);
-        let can_fold = player.map(|p| !p.is_folded()).unwrap_or(false);
+        let can_check = player.is_some_and(|p| p.get_current_bet() >= self.to_call);
+        let can_call =
+            player.is_some_and(|p| p.get_chips() > 0 && p.get_current_bet() < self.to_call);
+        let can_bet = player.is_some_and(|p| p.get_chips() > 0 && self.to_call == 0);
+        let can_raise =
+            player.is_some_and(|p| p.get_chips() > 0 && p.get_current_bet() < self.to_call);
+        let can_fold = player.is_some_and(|p| !p.is_folded());
 
         ui.set_can_check(can_check);
         ui.set_can_call(can_call);
@@ -1070,9 +1050,7 @@ impl PokerGame {
         ui.set_can_raise(can_raise);
         ui.set_can_fold(can_fold);
 
-        let call_amount = player
-            .map(|p| self.to_call.saturating_sub(p.get_current_bet()))
-            .unwrap_or(0);
+        let call_amount = player.map_or(0, |p| self.to_call.saturating_sub(p.get_current_bet()));
         ui.set_call_amount(call_amount as f32);
         ui.set_bet_amount(self.bet_amount as f32);
         ui.set_min_bet(self.min_bet as f32);
