@@ -324,11 +324,8 @@ impl PokerHandEvaluator {
 
         let mut ranks: Vec<u8> = all_cards.iter().map(|c| c.rank).collect();
         ranks.sort_unstable_by(|a, b| b.cmp(a));
-        let ranks_dedup: Vec<u8> = {
-            let mut deduped = ranks.clone();
-            deduped.dedup();
-            deduped
-        };
+        let mut ranks_dedup = ranks.clone();
+        ranks_dedup.dedup();
         let suits: Vec<Suit> = all_cards.iter().map(|c| c.suit).collect();
 
         let suit_counts: HashMap<Suit, usize> =
@@ -361,7 +358,7 @@ impl PokerHandEvaluator {
 
         let full_house_ranks: Vec<u8> = rank_counts
             .iter()
-            .filter(|(_, &count)| count >= 3 || count == 2)
+            .filter(|(_, &count)| count >= 2)
             .map(|(&rank, _)| rank)
             .collect();
         if full_house_ranks.len() >= 2 {
@@ -754,13 +751,6 @@ impl PokerGame {
     }
 
     fn check_street_complete(&mut self) {
-        let all_folded = self.players.iter().filter(|p| !p.is_folded()).count() <= 1;
-
-        if all_folded {
-            self.end_hand("All opponents folded".to_string());
-            return;
-        }
-
         let active_players: Vec<usize> = self
             .players
             .iter()
@@ -768,6 +758,13 @@ impl PokerGame {
             .filter(|(_, p)| !p.is_folded() && !p.is_all_in())
             .map(|(i, _)| i)
             .collect();
+
+        let all_folded = active_players.len() <= 1;
+
+        if all_folded {
+            self.end_hand("All opponents folded".to_string());
+            return;
+        }
 
         if active_players.is_empty() {
             self.advance_street();
@@ -1005,11 +1002,8 @@ impl PokerGame {
     }
 
     fn update_community_cards(&self, ui: &PokerApp) {
-        let community_cards: Vec<String> = self
-            .community_cards
-            .iter()
-            .map(ToString::to_string)
-            .collect();
+        let community_cards: Vec<String> =
+            self.community_cards.iter().map(|c| c.to_string()).collect();
         let community_cards_red: Vec<bool> =
             self.community_cards.iter().map(|c| c.is_red()).collect();
 
