@@ -227,14 +227,13 @@ impl Player {
         if amount > self.chips {
             return Err("Insufficient chips");
         }
-        let actual_bet = std::cmp::min(amount, self.chips);
-        self.chips -= actual_bet;
-        self.current_bet += actual_bet;
+        self.chips -= amount;
+        self.current_bet += amount;
         if self.chips == 0 {
             self.is_all_in = true;
         }
         self.has_acted = true;
-        Ok(actual_bet)
+        Ok(amount)
     }
 
     pub fn collect_pot(&mut self, amount: u64) {
@@ -927,12 +926,13 @@ impl PokerGame {
 
     pub fn update_ui(&mut self, message: String) {
         if let Some(ui) = self.game_weak.upgrade() {
-            let has_players = !self.players.is_empty();
-            if has_players {
+            if !self.players.is_empty() {
                 ui.set_player1_name(self.players[0].get_name().into());
                 ui.set_player1_chips(self.players[0].get_chips() as f32);
                 ui.set_p1_current_bet(self.players[0].get_current_bet() as f32);
                 ui.set_p1_folded(self.players[0].is_folded());
+            }
+            if self.players.len() >= 2 {
                 ui.set_player2_name(self.players[1].get_name().into());
                 ui.set_player2_chips(self.players[1].get_chips() as f32);
                 ui.set_p2_current_bet(self.players[1].get_current_bet() as f32);
@@ -965,12 +965,13 @@ impl PokerGame {
     }
 
     fn update_player_cards(&self, ui: &PokerApp) {
-        let has_players = !self.players.is_empty();
-        if has_players {
+        if !self.players.is_empty() {
             ui.set_p1_card1(self.hole_card_string(0, 0));
             ui.set_p1_card2(self.hole_card_string(0, 1));
             ui.set_p1_card1_red(self.hole_card_red(0, 0));
             ui.set_p1_card2_red(self.hole_card_red(0, 1));
+        }
+        if self.players.len() >= 2 {
             ui.set_p2_card1(self.hole_card_string(1, 0));
             ui.set_p2_card2(self.hole_card_string(1, 1));
             ui.set_p2_card1_red(self.hole_card_red(1, 0));
@@ -1017,21 +1018,29 @@ impl PokerGame {
     }
 
     fn update_player_status(&self, ui: &PokerApp) {
-        let has_players = !self.players.is_empty();
-        if has_players {
+        if !self.players.is_empty() {
             ui.set_p1_acting(self.current_player == 0 && !self.players[0].is_folded());
+        }
+        if self.players.len() >= 2 {
             ui.set_p2_acting(self.current_player == 1 && !self.players[1].is_folded());
         }
     }
 
     fn update_action_controls(&mut self, ui: &PokerApp) {
         let player = self.players.get(self.current_player);
-        let can_check = player.is_some_and(|p| p.get_current_bet() >= self.to_call);
-        let can_call =
-            player.is_some_and(|p| p.get_chips() > 0 && p.get_current_bet() < self.to_call);
-        let can_bet = player.is_some_and(|p| p.get_chips() > 0 && self.to_call == 0);
-        let can_raise =
-            player.is_some_and(|p| p.get_chips() > 0 && p.get_current_bet() < self.to_call);
+        let can_check =
+            player.is_some_and(|p| !p.is_folded() && p.get_current_bet() == self.to_call);
+        let can_call = player.is_some_and(|p| {
+            !p.is_folded() && p.get_chips() > 0 && p.get_current_bet() < self.to_call
+        });
+        let can_bet =
+            player.is_some_and(|p| !p.is_folded() && p.get_chips() > 0 && self.to_call == 0);
+        let can_raise = player.is_some_and(|p| {
+            !p.is_folded()
+                && p.get_chips() > 0
+                && p.get_current_bet() < self.to_call
+                && self.to_call > 0
+        });
         let can_fold = player.is_some_and(|p| !p.is_folded());
 
         ui.set_can_check(can_check);
