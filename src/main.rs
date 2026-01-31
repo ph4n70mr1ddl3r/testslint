@@ -779,7 +779,7 @@ impl PokerGame {
 
     fn advance_street(&mut self) {
         for player in &mut self.players {
-            player.has_acted = false;
+            player.set_has_acted(false);
         }
 
         self.to_call = 0;
