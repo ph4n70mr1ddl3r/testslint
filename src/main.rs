@@ -755,25 +755,36 @@ impl PokerGame {
         self.check_street_complete();
     }
 
-    fn check_street_complete(&mut self) {
-        let active_players: Vec<usize> = self
-            .players
+    fn get_active_players(&self) -> Vec<usize> {
+        self.players
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| !p.is_folded())
+            .map(|(i, _)| i)
+            .collect()
+    }
+
+    fn get_betting_players(&self) -> Vec<usize> {
+        self.players
             .iter()
             .enumerate()
             .filter(|(_, p)| !p.is_folded() && !p.is_all_in())
             .map(|(i, _)| i)
-            .collect();
+            .collect()
+    }
 
-        let all_folded = active_players.len() <= 1;
+    fn check_street_complete(&mut self) {
+        let betting_players = self.get_betting_players();
+        let all_folded = betting_players.len() <= 1;
 
         if all_folded {
             self.end_hand("All opponents folded".to_string());
             return;
         }
 
-        let all_acted = active_players.iter().all(|&i| self.players[i].has_acted());
+        let all_acted = betting_players.iter().all(|&i| self.players[i].has_acted());
 
-        let bets_equal = active_players
+        let bets_equal = betting_players
             .iter()
             .all(|&i| self.players[i].get_current_bet() == self.to_call);
 
@@ -834,13 +845,7 @@ impl PokerGame {
     }
 
     fn determine_winner(&mut self) {
-        let active_players: Vec<usize> = self
-            .players
-            .iter()
-            .enumerate()
-            .filter(|(_, p)| !p.is_folded())
-            .map(|(i, _)| i)
-            .collect();
+        let active_players = self.get_active_players();
 
         if active_players.len() == 1 {
             let winner_idx = active_players[0];
@@ -852,6 +857,7 @@ impl PokerGame {
                 winnings
             ));
             self.end_hand("Hand complete".to_string());
+            return;
         }
 
         let mut best_hand: Option<EvaluatedHand> = None;
@@ -893,19 +899,20 @@ impl PokerGame {
             self.players[winner_idx].collect_pot(split_amount);
         }
 
+        if remainder > 0 {
+            self.players[winners[0]].collect_pot(remainder);
+        }
+
         let winner_names: Vec<String> = winners
             .iter()
             .map(|&i| self.players[i].get_name().to_string())
             .collect();
 
         if winners.len() == 1 {
-            let winner_idx = winners[0];
-            let actual_winnings = split_amount + remainder;
-            self.players[winner_idx].collect_pot(remainder);
             self.update_ui(format!(
                 "{} wins {} with {:?}",
                 winner_names.join(", "),
-                actual_winnings,
+                split_amount + remainder,
                 best_hand.unwrap().rank
             ));
         } else {
