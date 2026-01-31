@@ -313,7 +313,7 @@ pub struct PokerHandEvaluator;
 
 impl PokerHandEvaluator {
     pub fn evaluate(hole_cards: &[Card], community_cards: &[Card]) -> EvaluatedHand {
-        let mut all_cards: Vec<Card> = Vec::with_capacity(5);
+        let mut all_cards: Vec<Card> = Vec::with_capacity(hole_cards.len() + community_cards.len());
         all_cards.extend(hole_cards);
         all_cards.extend(community_cards);
 
@@ -427,21 +427,25 @@ impl PokerHandEvaluator {
             .filter(|(_, &count)| count == 2)
             .map(|(&rank, _)| rank)
             .collect();
-        if two_pair_ranks.len() >= 2 {
-            let mut pairs = two_pair_ranks;
-            pairs.sort_unstable_by(|a, b| b.cmp(a));
-            let first_pair = pairs[0];
-            let second_pair = pairs[1];
-            let kicker: Vec<u8> = ranks
-                .iter()
-                .copied()
-                .filter(|&r| r != first_pair && r != second_pair)
-                .take(1)
-                .collect();
-            return EvaluatedHand::new(HandRank::TwoPair, vec![first_pair, second_pair], kicker);
-        }
+        if !two_pair_ranks.is_empty() {
+            if two_pair_ranks.len() >= 2 {
+                let mut pairs = two_pair_ranks;
+                pairs.sort_unstable_by(|a, b| b.cmp(a));
+                let first_pair = pairs[0];
+                let second_pair = pairs[1];
+                let kicker: Vec<u8> = ranks
+                    .iter()
+                    .copied()
+                    .filter(|&r| r != first_pair && r != second_pair)
+                    .take(1)
+                    .collect();
+                return EvaluatedHand::new(
+                    HandRank::TwoPair,
+                    vec![first_pair, second_pair],
+                    kicker,
+                );
+            }
 
-        if two_pair_ranks.len() == 1 {
             let pair_rank = two_pair_ranks[0];
             let kickers: Vec<u8> = ranks
                 .iter()
@@ -999,22 +1003,34 @@ impl PokerGame {
     }
 
     fn update_community_cards(&self, ui: &PokerApp) {
-        let community_cards: Vec<String> =
-            self.community_cards.iter().map(|c| c.to_string()).collect();
-        let community_cards_red: Vec<bool> =
-            self.community_cards.iter().map(|c| c.is_red()).collect();
+        ui.set_flop1(self.community_card_string(0));
+        ui.set_flop2(self.community_card_string(1));
+        ui.set_flop3(self.community_card_string(2));
+        ui.set_turn(self.community_card_string(3));
+        ui.set_river(self.community_card_string(4));
 
-        ui.set_flop1(community_cards.first().map_or("", String::as_str).into());
-        ui.set_flop2(community_cards.get(1).map_or("", String::as_str).into());
-        ui.set_flop3(community_cards.get(2).map_or("", String::as_str).into());
-        ui.set_turn(community_cards.get(3).map_or("", String::as_str).into());
-        ui.set_river(community_cards.get(4).map_or("", String::as_str).into());
+        ui.set_flop1_red(self.community_card_red(0));
+        ui.set_flop2_red(self.community_card_red(1));
+        ui.set_flop3_red(self.community_card_red(2));
+        ui.set_turn_red(self.community_card_red(3));
+        ui.set_river_red(self.community_card_red(4));
+    }
 
-        ui.set_flop1_red(community_cards_red.first().copied().unwrap_or(false));
-        ui.set_flop2_red(community_cards_red.get(1).copied().unwrap_or(false));
-        ui.set_flop3_red(community_cards_red.get(2).copied().unwrap_or(false));
-        ui.set_turn_red(community_cards_red.get(3).copied().unwrap_or(false));
-        ui.set_river_red(community_cards_red.get(4).copied().unwrap_or(false));
+    fn get_community_card(&self, card_idx: usize) -> Option<&Card> {
+        self.community_cards.get(card_idx)
+    }
+
+    fn community_card_string(&self, card_idx: usize) -> slint::SharedString {
+        self.get_community_card(card_idx)
+            .map(ToString::to_string)
+            .unwrap_or_default()
+            .into()
+    }
+
+    fn community_card_red(&self, card_idx: usize) -> bool {
+        self.get_community_card(card_idx)
+            .map(|c| c.is_red())
+            .unwrap_or(false)
     }
 
     fn update_player_status(&self, ui: &PokerApp) {
@@ -1038,8 +1054,8 @@ impl PokerGame {
         let can_raise = player.is_some_and(|p| {
             !p.is_folded()
                 && p.get_chips() > 0
-                && p.get_current_bet() < self.to_call
                 && self.to_call > 0
+                && p.get_current_bet() < self.to_call + self.min_bet
         });
         let can_fold = player.is_some_and(|p| !p.is_folded());
 
