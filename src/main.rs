@@ -637,10 +637,7 @@ impl PokerGame {
             min_raise
         };
 
-        self.max_bet = std::cmp::min(
-            player_chips,
-            MAX_BET_DEFAULT.saturating_mul(MAX_BET_MULTIPLIER),
-        );
+        self.max_bet = player_chips.min(MAX_BET_DEFAULT.saturating_mul(MAX_BET_MULTIPLIER));
 
         if self.bet_amount < self.min_bet {
             self.bet_amount = self.min_bet;
@@ -686,7 +683,7 @@ impl PokerGame {
             }
 
             PlayerAction::Call => {
-                let actual_call = std::cmp::min(call_amount, player.get_chips());
+                let actual_call = call_amount.min(player.get_chips());
                 self.players[player_idx].bet(actual_call)?;
                 self.pot += actual_call;
                 self.pot_commitments[player_idx] += actual_call;
@@ -698,7 +695,7 @@ impl PokerGame {
                 if call_amount > 0 {
                     return Err("Use Raise action instead of Bet when a bet is pending");
                 }
-                let bet_amount = std::cmp::min(self.bet_amount, player.get_chips());
+                let bet_amount = self.bet_amount.min(player.get_chips());
                 self.players[player_idx].bet(bet_amount)?;
                 self.to_call = bet_amount;
                 self.pot += bet_amount;
@@ -708,7 +705,7 @@ impl PokerGame {
             }
 
             PlayerAction::Raise => {
-                let raise_amount = std::cmp::min(self.bet_amount, player.get_chips());
+                let raise_amount = self.bet_amount.min(player.get_chips());
                 let total_bet = current_bet + raise_amount;
                 if total_bet <= self.to_call {
                     return Err("Raise must be greater than current bet");
