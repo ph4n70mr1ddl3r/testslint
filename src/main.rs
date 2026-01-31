@@ -114,17 +114,17 @@ impl Card {
     }
 
     pub fn from_string(s: &str) -> Option<Self> {
-        if s.chars().count() < 2 {
+        if s.len() < 2 {
             return None;
         }
 
-        let suit_char = s.chars().last().unwrap();
+        let suit_char = s.chars().last()?;
         let suit = Suit::from_char(suit_char)?;
 
-        let chars: Vec<char> = s.chars().collect();
-        let rank_part: String = chars[..chars.len() - 1].iter().collect();
+        let last_char_byte_idx = s.char_indices().next_back()?.0;
+        let rank_part = &s[..last_char_byte_idx];
 
-        let rank = match rank_part.as_str() {
+        let rank = match rank_part {
             "A" => 14,
             "K" => 13,
             "Q" => 12,
@@ -461,7 +461,7 @@ impl PokerHandEvaluator {
             return false;
         }
 
-        let mut sorted_ranks: Vec<u8> = ranks.to_vec();
+        let mut sorted_ranks = ranks.to_vec();
         sorted_ranks.sort_unstable();
 
         if Self::has_consecutive_window(&sorted_ranks, 5) {
@@ -1167,7 +1167,10 @@ fn main() {
         }
     });
 
-    app.run().unwrap();
+    if let Err(e) = app.run() {
+        eprintln!("Failed to start UI: {}", e);
+        std::process::exit(1);
+    }
 }
 
 #[cfg(test)]
