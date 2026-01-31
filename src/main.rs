@@ -808,11 +808,9 @@ impl PokerGame {
             GameStage::River => {
                 self.stage = GameStage::Showdown;
                 self.determine_winner();
-                return;
             }
             _ => {
                 self.end_hand("Hand complete".to_string());
-                return;
             }
         }
 
@@ -857,7 +855,6 @@ impl PokerGame {
                 winnings
             ));
             self.end_hand("Hand complete".to_string());
-            return;
         }
 
         let mut best_hand: Option<EvaluatedHand> = None;
@@ -890,7 +887,6 @@ impl PokerGame {
         if winners.is_empty() {
             self.update_ui("Error determining winner".to_string());
             self.end_hand("Hand complete".to_string());
-            return;
         }
 
         let split_amount = self.pot / winners.len() as u64;
