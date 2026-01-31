@@ -1420,5 +1420,6 @@ mod tests {
 
         let evaluated = PokerHandEvaluator::evaluate(&hole_cards, &community_cards);
         assert_eq!(evaluated.rank, HandRank::Straight);
+        assert_eq!(evaluated.primary_values, vec![5, 4, 3, 2, 1]);
     }
 }
