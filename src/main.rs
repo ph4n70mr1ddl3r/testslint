@@ -399,11 +399,13 @@ impl PokerHandEvaluator {
 
         let straight = Self::check_straight(&ranks_dedup);
         if straight {
-            return EvaluatedHand::new(
-                HandRank::Straight,
-                ranks_dedup.into_iter().take(5).collect(),
-                Vec::new(),
-            );
+            let primary_values =
+                if ranks_dedup.contains(&14) && ranks_dedup.iter().take(5).any(|&r| r < 5) {
+                    vec![5, 4, 3, 2, 1]
+                } else {
+                    ranks_dedup.iter().take(5).copied().collect()
+                };
+            return EvaluatedHand::new(HandRank::Straight, primary_values, Vec::new());
         }
 
         let three_of_kind: Vec<u8> = rank_counts
@@ -467,6 +469,7 @@ impl PokerHandEvaluator {
 
         let mut sorted_ranks = ranks.to_vec();
         sorted_ranks.sort_unstable();
+        sorted_ranks.dedup();
 
         if Self::has_consecutive_window(&sorted_ranks, 5) {
             return true;
@@ -479,6 +482,7 @@ impl PokerHandEvaluator {
                 .map(|r| if r == 14 { 1 } else { r })
                 .collect();
             ace_low_ranks.sort_unstable();
+            ace_low_ranks.dedup();
             if Self::has_consecutive_window(&ace_low_ranks, 5) {
                 return true;
             }
