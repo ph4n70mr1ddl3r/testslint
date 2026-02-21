@@ -1,22 +1,17 @@
 use rand::Rng;
-use slint::Weak;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 
-include!(env!("SLINT_INCLUDE_GENERATED"));
+pub const SMALL_BLIND_CHIPS: u64 = 10;
+pub const BIG_BLIND_CHIPS: u64 = 20;
+pub const INITIAL_CHIPS: u64 = 10000;
+pub const MIN_CHIPS_TO_CONTINUE: u64 = 10;
+pub const MIN_BET_DEFAULT: u64 = 20;
+pub const MAX_BET_DEFAULT: u64 = 500;
+pub const MAX_BET_MULTIPLIER: u64 = 100;
+pub const CALL_AMOUNT_DEFAULT: u64 = 50;
+pub const NUM_PLAYERS: usize = 2;
 
-const SMALL_BLIND_CHIPS: u64 = 10;
-const BIG_BLIND_CHIPS: u64 = 20;
-const INITIAL_CHIPS: u64 = 10000;
-const MIN_CHIPS_TO_CONTINUE: u64 = 10;
-const MIN_BET_DEFAULT: u64 = 20;
-const MAX_BET_DEFAULT: u64 = 500;
-const MAX_BET_MULTIPLIER: u64 = 100;
-const CALL_AMOUNT_DEFAULT: u64 = 50;
-const NUM_PLAYERS: usize = 2;
-
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum GameStage {
     Preflop,
     Flop,
@@ -27,7 +22,7 @@ pub enum GameStage {
     WaitingToStart,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PlayerAction {
     Fold,
     Check,
@@ -37,7 +32,7 @@ pub enum PlayerAction {
     AllIn,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, PartialOrd, Ord, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub enum HandRank {
     HighCard = 0,
     Pair = 1,
@@ -51,7 +46,7 @@ pub enum HandRank {
     RoyalFlush = 9,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, PartialOrd, Ord, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub enum Suit {
     Spades,
     Hearts,
@@ -60,6 +55,7 @@ pub enum Suit {
 }
 
 impl Suit {
+    #[must_use]
     pub fn to_char(self) -> char {
         match self {
             Suit::Spades => '♠',
@@ -69,6 +65,7 @@ impl Suit {
         }
     }
 
+    #[must_use]
     pub fn from_char(c: char) -> Option<Self> {
         match c {
             '♠' => Some(Suit::Spades),
@@ -79,12 +76,13 @@ impl Suit {
         }
     }
 
+    #[must_use]
     pub fn is_red(self) -> bool {
         matches!(self, Suit::Hearts | Suit::Diamonds)
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, PartialOrd, Ord, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct Card {
     pub rank: u8,
     pub suit: Suit,
@@ -98,21 +96,24 @@ impl std::fmt::Display for Card {
             12 => "Q",
             11 => "J",
             10 => "10",
-            n => return write!(f, "{}{}", n, self.suit.to_char()),
+            n => return write!(f, "{n}{}", self.suit.to_char()),
         };
-        write!(f, "{}{}", rank_str, self.suit.to_char())
+        write!(f, "{rank_str}{}", self.suit.to_char())
     }
 }
 
 impl Card {
+    #[must_use]
     pub fn new(rank: u8, suit: Suit) -> Self {
         Card { rank, suit }
     }
 
+    #[must_use]
     pub fn is_red(self) -> bool {
         self.suit.is_red()
     }
 
+    #[must_use]
     pub fn from_string(s: &str) -> Option<Self> {
         if s.len() < 2 {
             return None;
@@ -152,6 +153,7 @@ impl Default for Deck {
 }
 
 impl Deck {
+    #[must_use]
     pub fn new() -> Self {
         let mut cards = Vec::with_capacity(52);
         for suit in [Suit::Spades, Suit::Hearts, Suit::Diamonds, Suit::Clubs] {
@@ -177,10 +179,12 @@ impl Deck {
         Some(self.cards.drain(0..count).collect())
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.cards.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.cards.is_empty()
     }
@@ -202,6 +206,7 @@ pub struct Player {
 }
 
 impl Player {
+    #[must_use]
     pub fn new(name: String, chips: u64) -> Self {
         Player {
             name,
@@ -248,18 +253,22 @@ impl Player {
         self.acted = false;
     }
 
+    #[must_use]
     pub fn get_name(&self) -> &str {
         &self.name
     }
 
+    #[must_use]
     pub fn get_chips(&self) -> u64 {
         self.chips
     }
 
+    #[must_use]
     pub fn get_current_bet(&self) -> u64 {
         self.current_bet
     }
 
+    #[must_use]
     pub fn is_folded(&self) -> bool {
         self.folded
     }
@@ -268,10 +277,12 @@ impl Player {
         self.folded = folded;
     }
 
+    #[must_use]
     pub fn is_all_in(&self) -> bool {
         self.all_in
     }
 
+    #[must_use]
     pub fn has_acted(&self) -> bool {
         self.acted
     }
@@ -280,6 +291,7 @@ impl Player {
         self.acted = acted;
     }
 
+    #[must_use]
     pub fn get_hole_cards(&self) -> &[Card] {
         &self.hole_cards
     }
@@ -293,6 +305,7 @@ pub struct EvaluatedHand {
 }
 
 impl EvaluatedHand {
+    #[must_use]
     pub fn new(rank: HandRank, primary_values: Vec<u8>, kickers: Vec<u8>) -> Self {
         EvaluatedHand {
             rank,
@@ -305,6 +318,7 @@ impl EvaluatedHand {
 pub struct PokerHandEvaluator;
 
 impl PokerHandEvaluator {
+    #[must_use]
     pub fn evaluate(hole_cards: &[Card], community_cards: &[Card]) -> EvaluatedHand {
         let mut all_cards: Vec<Card> = Vec::with_capacity(hole_cards.len() + community_cards.len());
         all_cards.extend(hole_cards);
@@ -318,13 +332,6 @@ impl PokerHandEvaluator {
         ranks.sort_unstable_by(|a, b| b.cmp(a));
         let mut ranks_dedup = ranks.clone();
         ranks_dedup.dedup();
-        let suits: Vec<Suit> = all_cards.iter().map(|c| c.suit).collect();
-
-        let suit_counts: HashMap<Suit, usize> =
-            suits.iter().fold(HashMap::new(), |mut map, &suit| {
-                *map.entry(suit).or_insert(0) += 1;
-                map
-            });
 
         let rank_counts: HashMap<u8, usize> =
             ranks.iter().fold(HashMap::new(), |mut map, &rank| {
@@ -332,12 +339,10 @@ impl PokerHandEvaluator {
                 map
             });
 
-        let four_of_kind: Vec<u8> = rank_counts
+        if let Some(four_rank) = rank_counts
             .iter()
-            .filter(|(_, &count)| count == 4)
-            .map(|(&rank, _)| rank)
-            .collect();
-        if let Some(&four_rank) = four_of_kind.first() {
+            .find_map(|(&rank, &count)| (count == 4).then_some(rank))
+        {
             let kickers: Vec<u8> = ranks
                 .iter()
                 .copied()
@@ -363,6 +368,12 @@ impl PokerHandEvaluator {
                 }
             }
         }
+
+        let suit_counts: HashMap<Suit, usize> =
+            all_cards.iter().fold(HashMap::new(), |mut map, &card| {
+                *map.entry(card.suit).or_insert(0) += 1;
+                map
+            });
 
         let flush_suit = suit_counts
             .iter()
@@ -400,12 +411,10 @@ impl PokerHandEvaluator {
             return EvaluatedHand::new(HandRank::Straight, primary_values, Vec::new());
         }
 
-        let three_of_kind: Vec<u8> = rank_counts
+        if let Some(three_rank) = rank_counts
             .iter()
-            .filter(|(_, &count)| count == 3)
-            .map(|(&rank, _)| rank)
-            .collect();
-        if let Some(&three_rank) = three_of_kind.first() {
+            .find_map(|(&rank, &count)| (count == 3).then_some(rank))
+        {
             let kickers: Vec<u8> = ranks
                 .iter()
                 .copied()
@@ -434,14 +443,14 @@ impl PokerHandEvaluator {
             return EvaluatedHand::new(HandRank::TwoPair, vec![first_pair, second_pair], kicker);
         }
 
-        if let Some(&pair_rank) = two_pair_ranks.first() {
+        if let Some(pair_rank) = two_pair_ranks.first() {
             let kickers: Vec<u8> = ranks
                 .iter()
                 .copied()
-                .filter(|&r| r != pair_rank)
+                .filter(|&r| r != *pair_rank)
                 .take(3)
                 .collect();
-            return EvaluatedHand::new(HandRank::Pair, vec![pair_rank], kickers);
+            return EvaluatedHand::new(HandRank::Pair, vec![*pair_rank], kickers);
         }
 
         let kickers: Vec<u8> = ranks.into_iter().take(5).collect();
@@ -478,36 +487,33 @@ impl PokerHandEvaluator {
     }
 
     fn has_consecutive_window(ranks: &[u8], window_size: usize) -> bool {
-        for i in 0..=ranks.len().saturating_sub(window_size) {
+        (0..=ranks.len().saturating_sub(window_size)).any(|i| {
             let window = &ranks[i..i + window_size];
-            if window.windows(2).all(|w| w[1] == w[0] + 1) {
-                return true;
-            }
-        }
-        false
+            window.windows(2).all(|w| w[1] == w[0] + 1)
+        })
     }
 }
 
 #[derive(Clone)]
-pub struct PokerGame {
-    deck: Deck,
-    players: Vec<Player>,
-    community_cards: Vec<Card>,
-    pot: u64,
-    stage: GameStage,
-    dealer_position: usize,
-    current_player: usize,
-    to_call: u64,
-    game_weak: Weak<PokerApp>,
-    pending_action: bool,
-    bet_amount: u64,
-    min_bet: u64,
-    max_bet: u64,
-    pot_odds: f32,
+pub struct PokerGameState {
+    pub deck: Deck,
+    pub players: Vec<Player>,
+    pub community_cards: Vec<Card>,
+    pub pot: u64,
+    pub stage: GameStage,
+    pub dealer_position: usize,
+    pub current_player: usize,
+    pub to_call: u64,
+    pub pending_action: bool,
+    pub bet_amount: u64,
+    pub min_bet: u64,
+    pub max_bet: u64,
+    pub pot_odds: f32,
 }
 
-impl PokerGame {
-    pub fn new(game_weak: Weak<PokerApp>) -> Self {
+impl PokerGameState {
+    #[must_use]
+    pub fn new() -> Self {
         let mut deck = Deck::new();
         deck.shuffle();
 
@@ -515,7 +521,7 @@ impl PokerGame {
         players.push(Player::new("Alice".to_string(), INITIAL_CHIPS));
         players.push(Player::new("Bob".to_string(), INITIAL_CHIPS));
 
-        PokerGame {
+        PokerGameState {
             deck,
             players,
             community_cards: Vec::with_capacity(5),
@@ -524,7 +530,6 @@ impl PokerGame {
             dealer_position: 0,
             current_player: 0,
             to_call: 0,
-            game_weak,
             pending_action: false,
             bet_amount: CALL_AMOUNT_DEFAULT,
             min_bet: MIN_BET_DEFAULT,
@@ -579,8 +584,6 @@ impl PokerGame {
         self.pending_action = true;
         self.update_action_bounds();
 
-        self.update_ui("New hand started".to_string());
-
         Ok(())
     }
 
@@ -628,7 +631,7 @@ impl PokerGame {
     /// # Errors
     ///
     /// Returns various errors based on the action type and game state.
-    pub fn perform_action(&mut self, action: PlayerAction) -> Result<(), &'static str> {
+    pub fn perform_action(&mut self, action: PlayerAction) -> Result<String, &'static str> {
         if !self.pending_action {
             return Err("No pending action");
         }
@@ -644,10 +647,10 @@ impl PokerGame {
         let current_bet = player.get_current_bet();
         let call_amount = self.to_call.saturating_sub(current_bet);
 
-        match action {
+        let message = match action {
             PlayerAction::Fold => {
                 self.players[player_idx].set_folded(true);
-                self.update_ui(format!("{player_name} folded"));
+                format!("{player_name} folded")
             }
 
             PlayerAction::Check => {
@@ -655,7 +658,7 @@ impl PokerGame {
                     return Err("Cannot check when a bet is pending");
                 }
                 self.players[player_idx].set_has_acted(true);
-                self.update_ui(format!("{player_name} checked"));
+                format!("{player_name} checked")
             }
 
             PlayerAction::Call => {
@@ -663,7 +666,7 @@ impl PokerGame {
                 self.players[player_idx].bet(actual_call)?;
                 self.pot += actual_call;
                 self.players[player_idx].set_has_acted(true);
-                self.update_ui(format!("{player_name} called {actual_call}"));
+                format!("{player_name} called {actual_call}")
             }
 
             PlayerAction::Bet => {
@@ -674,7 +677,7 @@ impl PokerGame {
                 self.players[player_idx].bet(bet_amount)?;
                 self.to_call = bet_amount;
                 self.pot += bet_amount;
-                self.update_ui(format!("{player_name} bet {bet_amount}"));
+                format!("{player_name} bet {bet_amount}")
             }
 
             PlayerAction::Raise => {
@@ -686,7 +689,7 @@ impl PokerGame {
                 self.players[player_idx].bet(raise_amount)?;
                 self.to_call = total_bet;
                 self.pot += raise_amount;
-                self.update_ui(format!("{player_name} raised to {total_bet}"));
+                format!("{player_name} raised to {total_bet}")
             }
 
             PlayerAction::AllIn => {
@@ -696,13 +699,13 @@ impl PokerGame {
                 if current_bet + all_in_amount > self.to_call {
                     self.to_call = current_bet + all_in_amount;
                 }
-                self.update_ui(format!("{player_name} went all-in with {all_in_amount}"));
+                format!("{player_name} went all-in with {all_in_amount}")
             }
-        }
+        };
 
         self.advance_to_next_player();
 
-        Ok(())
+        Ok(message)
     }
 
     fn advance_to_next_player(&mut self) {
@@ -744,10 +747,9 @@ impl PokerGame {
 
     fn check_street_complete(&mut self) {
         let betting_players = self.get_betting_players();
-        let all_folded = betting_players.len() <= 1;
 
-        if all_folded {
-            self.end_hand("All opponents folded".to_string());
+        if betting_players.len() <= 1 {
+            self.end_hand();
             return;
         }
 
@@ -787,21 +789,13 @@ impl PokerGame {
                 self.determine_winner();
             }
             _ => {
-                self.end_hand("Hand complete".to_string());
+                self.end_hand();
             }
         }
 
         self.current_player = (self.dealer_position + 1) % self.players.len();
         self.pending_action = true;
         self.update_action_bounds();
-
-        let stage_name = match self.stage {
-            GameStage::Flop => "Flop",
-            GameStage::Turn => "Turn",
-            GameStage::River => "River",
-            _ => "Unknown",
-        };
-        self.update_ui(format!("{} - {}", stage_name, self.get_stage_string()));
     }
 
     fn deal_community_cards(&mut self, count: usize) {
@@ -820,12 +814,7 @@ impl PokerGame {
             let winner_idx = active_players[0];
             let winnings = self.pot;
             self.players[winner_idx].collect_pot(winnings);
-            self.update_ui(format!(
-                "{} wins {} (all folded)",
-                self.players[winner_idx].get_name(),
-                winnings
-            ));
-            self.end_hand("Hand complete".to_string());
+            self.end_hand();
             return;
         }
 
@@ -838,8 +827,8 @@ impl PokerGame {
                 &self.community_cards,
             );
 
-            if let Some(ref best) = best_hand {
-                match hand.cmp(best) {
+            match best_hand.as_ref() {
+                Some(best) => match hand.cmp(best) {
                     std::cmp::Ordering::Greater => {
                         best_hand = Some(hand);
                         winners.clear();
@@ -848,17 +837,17 @@ impl PokerGame {
                     std::cmp::Ordering::Equal => {
                         winners.push(player_idx);
                     }
-                    std::cmp::Ordering::Less => { /* current hand is worse, keep existing best */ }
+                    std::cmp::Ordering::Less => {}
+                },
+                None => {
+                    best_hand = Some(hand);
+                    winners.push(player_idx);
                 }
-            } else {
-                best_hand = Some(hand);
-                winners.push(player_idx);
             }
         }
 
         if winners.is_empty() {
-            self.update_ui("Error determining winner".to_string());
-            self.end_hand("Hand complete".to_string());
+            self.end_hand();
             return;
         }
 
@@ -873,63 +862,16 @@ impl PokerGame {
             self.players[winners[0]].collect_pot(remainder);
         }
 
-        let winner_names: Vec<String> = winners
-            .iter()
-            .map(|&i| self.players[i].get_name().to_string())
-            .collect();
-
-        if winners.len() == 1 {
-            self.update_ui(format!(
-                "{} wins {} with {:?}",
-                winner_names.join(", "),
-                split_amount + remainder,
-                best_hand.unwrap().rank
-            ));
-        } else {
-            self.update_ui(format!(
-                "{} split the pot ({})",
-                winner_names.join(" & "),
-                split_amount
-            ));
-        }
-
-        self.end_hand("Hand complete".to_string());
+        self.end_hand();
     }
 
-    fn end_hand(&mut self, message: String) {
+    fn end_hand(&mut self) {
         self.stage = GameStage::HandComplete;
         self.dealer_position = (self.dealer_position + 1) % self.players.len();
-        self.update_ui(message);
     }
 
-    pub fn update_ui(&mut self, message: String) {
-        if let Some(ui) = self.game_weak.upgrade() {
-            if !self.players.is_empty() {
-                ui.set_player1_name(self.players[0].get_name().into());
-                ui.set_player1_chips(self.players[0].get_chips() as f32);
-                ui.set_p1_current_bet(self.players[0].get_current_bet() as f32);
-                ui.set_p1_folded(self.players[0].is_folded());
-            }
-            if self.players.len() >= 2 {
-                ui.set_player2_name(self.players[1].get_name().into());
-                ui.set_player2_chips(self.players[1].get_chips() as f32);
-                ui.set_p2_current_bet(self.players[1].get_current_bet() as f32);
-                ui.set_p2_folded(self.players[1].is_folded());
-            }
-            ui.set_pot_size(self.pot as f32);
-            ui.set_pot_odds(self.pot_odds);
-            ui.set_game_stage(self.get_stage_string().into());
-            ui.set_dealer_position(self.dealer_position as i32);
-            ui.set_message(message.into());
-
-            self.update_player_cards(&ui);
-            self.update_community_cards(&ui);
-            self.update_player_status(&ui);
-            self.update_action_controls(&ui);
-        }
-    }
-
-    fn get_stage_string(&self) -> String {
+    #[must_use]
+    pub fn get_stage_string(&self) -> &'static str {
         match self.stage {
             GameStage::Preflop => "Preflop",
             GameStage::Flop => "Flop",
@@ -939,119 +881,6 @@ impl PokerGame {
             GameStage::HandComplete => "Complete",
             GameStage::WaitingToStart => "Waiting",
         }
-        .to_string()
-    }
-
-    fn update_player_cards(&self, ui: &PokerApp) {
-        if !self.players.is_empty() {
-            ui.set_p1_card1(self.hole_card_string(0, 0));
-            ui.set_p1_card2(self.hole_card_string(0, 1));
-            ui.set_p1_card1_red(self.hole_card_red(0, 0));
-            ui.set_p1_card2_red(self.hole_card_red(0, 1));
-        }
-        if self.players.len() >= 2 {
-            ui.set_p2_card1(self.hole_card_string(1, 0));
-            ui.set_p2_card2(self.hole_card_string(1, 1));
-            ui.set_p2_card1_red(self.hole_card_red(1, 0));
-            ui.set_p2_card2_red(self.hole_card_red(1, 1));
-        }
-    }
-
-    fn get_hole_card(&self, player_idx: usize, card_idx: usize) -> Option<&Card> {
-        self.players
-            .get(player_idx)
-            .and_then(|p| p.get_hole_cards().get(card_idx))
-    }
-
-    fn hole_card_string(&self, player_idx: usize, card_idx: usize) -> slint::SharedString {
-        self.get_hole_card(player_idx, card_idx)
-            .map(ToString::to_string)
-            .unwrap_or_default()
-            .into()
-    }
-
-    fn hole_card_red(&self, player_idx: usize, card_idx: usize) -> bool {
-        self.get_hole_card(player_idx, card_idx)
-            .map(|c| c.is_red())
-            .unwrap_or(false)
-    }
-
-    fn update_community_cards(&self, ui: &PokerApp) {
-        ui.set_flop1(self.community_card_string(0));
-        ui.set_flop2(self.community_card_string(1));
-        ui.set_flop3(self.community_card_string(2));
-        ui.set_turn(self.community_card_string(3));
-        ui.set_river(self.community_card_string(4));
-
-        ui.set_flop1_red(self.community_card_red(0));
-        ui.set_flop2_red(self.community_card_red(1));
-        ui.set_flop3_red(self.community_card_red(2));
-        ui.set_turn_red(self.community_card_red(3));
-        ui.set_river_red(self.community_card_red(4));
-    }
-
-    fn get_community_card(&self, card_idx: usize) -> Option<&Card> {
-        self.community_cards.get(card_idx)
-    }
-
-    fn community_card_string(&self, card_idx: usize) -> slint::SharedString {
-        self.get_community_card(card_idx)
-            .map(ToString::to_string)
-            .unwrap_or_default()
-            .into()
-    }
-
-    fn community_card_red(&self, card_idx: usize) -> bool {
-        self.get_community_card(card_idx)
-            .map(|c| c.is_red())
-            .unwrap_or(false)
-    }
-
-    fn update_player_status(&self, ui: &PokerApp) {
-        if !self.players.is_empty() {
-            ui.set_p1_acting(self.current_player == 0 && !self.players[0].is_folded());
-        }
-        if self.players.len() >= 2 {
-            ui.set_p2_acting(self.current_player == 1 && !self.players[1].is_folded());
-        }
-    }
-
-    fn update_action_controls(&mut self, ui: &PokerApp) {
-        let player = self.players.get(self.current_player);
-        let can_check =
-            player.is_some_and(|p| !p.is_folded() && p.get_current_bet() == self.to_call);
-        let can_call = player.is_some_and(|p| {
-            !p.is_folded() && p.get_chips() > 0 && p.get_current_bet() < self.to_call
-        });
-        let can_bet =
-            player.is_some_and(|p| !p.is_folded() && p.get_chips() > 0 && self.to_call == 0);
-        let can_raise = player.is_some_and(|p| {
-            !p.is_folded()
-                && p.get_chips() > 0
-                && self.to_call > 0
-                && p.get_current_bet() < self.to_call + self.min_bet
-        });
-        let can_fold = player.is_some_and(|p| !p.is_folded());
-
-        ui.set_can_check(can_check);
-        ui.set_can_call(can_call);
-        ui.set_can_bet(can_bet);
-        ui.set_can_raise(can_raise);
-        ui.set_can_fold(can_fold);
-
-        let call_amount = player.map_or(0, |p| self.to_call.saturating_sub(p.get_current_bet()));
-        ui.set_call_amount(call_amount as f32);
-        ui.set_bet_amount(self.bet_amount as f32);
-        ui.set_min_bet(self.min_bet as f32);
-        ui.set_max_bet(self.max_bet as f32);
-
-        let total_pot = self.pot.saturating_add(call_amount);
-        if call_amount > 0 && total_pot > 0 {
-            self.pot_odds = call_amount as f32 / total_pot as f32;
-        } else {
-            self.pot_odds = 0.0;
-        }
-        ui.set_pot_odds(self.pot_odds);
     }
 
     pub fn set_bet_amount(&mut self, amount: f32) {
@@ -1061,104 +890,75 @@ impl PokerGame {
         }
     }
 
+    #[must_use]
     pub fn is_pending_action(&self) -> bool {
         self.pending_action
     }
 
+    #[must_use]
     pub fn get_current_player(&self) -> usize {
         self.current_player
     }
+
+    #[must_use]
+    pub fn can_check(&self) -> bool {
+        self.players
+            .get(self.current_player)
+            .is_some_and(|p| !p.is_folded() && p.get_current_bet() == self.to_call)
+    }
+
+    #[must_use]
+    pub fn can_call(&self) -> bool {
+        self.players.get(self.current_player).is_some_and(|p| {
+            !p.is_folded() && p.get_chips() > 0 && p.get_current_bet() < self.to_call
+        })
+    }
+
+    #[must_use]
+    pub fn can_bet(&self) -> bool {
+        self.players
+            .get(self.current_player)
+            .is_some_and(|p| !p.is_folded() && p.get_chips() > 0 && self.to_call == 0)
+    }
+
+    #[must_use]
+    pub fn can_raise(&self) -> bool {
+        self.players.get(self.current_player).is_some_and(|p| {
+            !p.is_folded()
+                && p.get_chips() > 0
+                && self.to_call > 0
+                && p.get_current_bet() < self.to_call + self.min_bet
+        })
+    }
+
+    #[must_use]
+    pub fn can_fold(&self) -> bool {
+        self.players
+            .get(self.current_player)
+            .is_some_and(|p| !p.is_folded())
+    }
+
+    #[must_use]
+    pub fn get_call_amount(&self) -> u64 {
+        self.players
+            .get(self.current_player)
+            .map_or(0, |p| self.to_call.saturating_sub(p.get_current_bet()))
+    }
+
+    pub fn update_pot_odds(&mut self) {
+        let call_amount = self.get_call_amount();
+        let total_pot = self.pot.saturating_add(call_amount);
+        self.pot_odds = if call_amount > 0 && total_pot > 0 {
+            call_amount as f32 / total_pot as f32
+        } else {
+            0.0
+        };
+    }
 }
 
-fn main() {
-    let app = PokerApp::new().unwrap();
-
-    app.set_player1_name("Alice".into());
-    app.set_player2_name("Bob".into());
-    app.set_player1_chips(INITIAL_CHIPS as f32);
-    app.set_player2_chips(INITIAL_CHIPS as f32);
-    app.set_pot_size(0.0);
-    app.set_game_stage("Waiting".into());
-    app.set_message("Click Start to begin".into());
-    app.set_bet_amount(CALL_AMOUNT_DEFAULT as f32);
-    app.set_min_bet(MIN_BET_DEFAULT as f32);
-    app.set_max_bet(MAX_BET_DEFAULT as f32);
-    app.set_pot_odds(0.0);
-    app.set_call_amount(0.0);
-    app.set_can_check(false);
-    app.set_can_call(false);
-    app.set_can_bet(false);
-    app.set_can_raise(false);
-    app.set_can_fold(false);
-    app.set_dealer_position(0);
-    app.set_p1_card1("".into());
-    app.set_p1_card2("".into());
-    app.set_p2_card1("".into());
-    app.set_p2_card2("".into());
-    app.set_flop1("".into());
-    app.set_flop2("".into());
-    app.set_flop3("".into());
-    app.set_turn("".into());
-    app.set_river("".into());
-
-    let game_weak = app.as_weak();
-    let game = Rc::new(RefCell::new(PokerGame::new(game_weak.clone())));
-
-    let game1 = game.clone();
-    app.on_bet_changed(move |value| {
-        let mut g = game1.borrow_mut();
-        g.set_bet_amount(value);
-    });
-
-    let game2 = game.clone();
-    app.on_start_game(move || {
-        let mut g = game2.borrow_mut();
-        g.start_new_hand().ok();
-    });
-
-    let game3 = game.clone();
-    app.on_fold(move || {
-        let mut g = game3.borrow_mut();
-        if g.is_pending_action() {
-            g.perform_action(PlayerAction::Fold).ok();
-        }
-    });
-
-    let game4 = game.clone();
-    app.on_check(move || {
-        let mut g = game4.borrow_mut();
-        if g.is_pending_action() {
-            g.perform_action(PlayerAction::Check).ok();
-        }
-    });
-
-    let game5 = game.clone();
-    app.on_call(move || {
-        let mut g = game5.borrow_mut();
-        if g.is_pending_action() {
-            g.perform_action(PlayerAction::Call).ok();
-        }
-    });
-
-    let game6 = game.clone();
-    app.on_bet(move || {
-        let mut g = game6.borrow_mut();
-        if g.is_pending_action() {
-            g.perform_action(PlayerAction::Bet).ok();
-        }
-    });
-
-    let game7 = game.clone();
-    app.on_raise(move || {
-        let mut g = game7.borrow_mut();
-        if g.is_pending_action() {
-            g.perform_action(PlayerAction::Raise).ok();
-        }
-    });
-
-    if let Err(e) = app.run() {
-        eprintln!("Failed to start UI: {}", e);
-        std::process::exit(1);
+impl Default for PokerGameState {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
