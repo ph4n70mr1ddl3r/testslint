@@ -337,8 +337,7 @@ impl PokerHandEvaluator {
             .filter(|(_, &count)| count == 4)
             .map(|(&rank, _)| rank)
             .collect();
-        if !four_of_kind.is_empty() {
-            let four_rank = four_of_kind[0];
+        if let Some(&four_rank) = four_of_kind.first() {
             let kickers: Vec<u8> = ranks
                 .iter()
                 .copied()
@@ -406,8 +405,7 @@ impl PokerHandEvaluator {
             .filter(|(_, &count)| count == 3)
             .map(|(&rank, _)| rank)
             .collect();
-        if !three_of_kind.is_empty() {
-            let three_rank = three_of_kind[0];
+        if let Some(&three_rank) = three_of_kind.first() {
             let kickers: Vec<u8> = ranks
                 .iter()
                 .copied()
@@ -436,8 +434,7 @@ impl PokerHandEvaluator {
             return EvaluatedHand::new(HandRank::TwoPair, vec![first_pair, second_pair], kicker);
         }
 
-        if two_pair_ranks.len() == 1 {
-            let pair_rank = two_pair_ranks[0];
+        if let Some(&pair_rank) = two_pair_ranks.first() {
             let kickers: Vec<u8> = ranks
                 .iter()
                 .copied()
