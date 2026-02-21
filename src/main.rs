@@ -196,9 +196,9 @@ pub struct Player {
     chips: u64,
     hole_cards: Vec<Card>,
     current_bet: u64,
-    is_folded: bool,
-    is_all_in: bool,
-    has_acted: bool,
+    folded: bool,
+    all_in: bool,
+    acted: bool,
 }
 
 impl Player {
@@ -208,9 +208,9 @@ impl Player {
             chips,
             hole_cards: Vec::with_capacity(2),
             current_bet: 0,
-            is_folded: false,
-            is_all_in: false,
-            has_acted: false,
+            folded: false,
+            all_in: false,
+            acted: false,
         }
     }
 
@@ -230,9 +230,9 @@ impl Player {
         self.chips -= amount;
         self.current_bet += amount;
         if self.chips == 0 {
-            self.is_all_in = true;
+            self.all_in = true;
         }
-        self.has_acted = true;
+        self.acted = true;
         Ok(amount)
     }
 
@@ -243,9 +243,9 @@ impl Player {
     pub fn reset_for_new_hand(&mut self) {
         self.hole_cards.clear();
         self.current_bet = 0;
-        self.is_folded = false;
-        self.is_all_in = false;
-        self.has_acted = false;
+        self.folded = false;
+        self.all_in = false;
+        self.acted = false;
     }
 
     pub fn get_name(&self) -> &str {
@@ -261,23 +261,23 @@ impl Player {
     }
 
     pub fn is_folded(&self) -> bool {
-        self.is_folded
+        self.folded
     }
 
     pub fn set_folded(&mut self, folded: bool) {
-        self.is_folded = folded;
+        self.folded = folded;
     }
 
     pub fn is_all_in(&self) -> bool {
-        self.is_all_in
+        self.all_in
     }
 
     pub fn has_acted(&self) -> bool {
-        self.has_acted
+        self.acted
     }
 
     pub fn set_has_acted(&mut self, acted: bool) {
-        self.has_acted = acted;
+        self.acted = acted;
     }
 
     pub fn get_hole_cards(&self) -> &[Card] {
@@ -429,25 +429,21 @@ impl PokerHandEvaluator {
             .filter(|(_, &count)| count == 2)
             .map(|(&rank, _)| rank)
             .collect();
-        if !two_pair_ranks.is_empty() {
-            if two_pair_ranks.len() >= 2 {
-                let mut pairs = two_pair_ranks;
-                pairs.sort_unstable_by(|a, b| b.cmp(a));
-                let first_pair = pairs[0];
-                let second_pair = pairs[1];
-                let kicker: Vec<u8> = ranks
-                    .iter()
-                    .copied()
-                    .filter(|&r| r != first_pair && r != second_pair)
-                    .take(1)
-                    .collect();
-                return EvaluatedHand::new(
-                    HandRank::TwoPair,
-                    vec![first_pair, second_pair],
-                    kicker,
-                );
-            }
+        if two_pair_ranks.len() >= 2 {
+            let mut pairs = two_pair_ranks;
+            pairs.sort_unstable_by(|a, b| b.cmp(a));
+            let first_pair = pairs[0];
+            let second_pair = pairs[1];
+            let kicker: Vec<u8> = ranks
+                .iter()
+                .copied()
+                .filter(|&r| r != first_pair && r != second_pair)
+                .take(1)
+                .collect();
+            return EvaluatedHand::new(HandRank::TwoPair, vec![first_pair, second_pair], kicker);
+        }
 
+        if two_pair_ranks.len() == 1 {
             let pair_rank = two_pair_ranks[0];
             let kickers: Vec<u8> = ranks
                 .iter()
