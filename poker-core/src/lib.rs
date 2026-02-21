@@ -737,10 +737,20 @@ impl PokerGameState {
     }
 
     fn check_street_complete(&mut self) {
+        let active_players = self.get_active_players();
+
+        if active_players.len() == 1 {
+            let winner_idx = active_players[0];
+            self.players[winner_idx].collect_pot(self.pot);
+            self.end_hand();
+            return;
+        }
+
         let betting_players = self.get_betting_players();
 
-        if betting_players.len() <= 1 {
-            self.end_hand();
+        if betting_players.is_empty() {
+            self.run_out_board();
+            self.determine_winner();
             return;
         }
 
@@ -753,6 +763,27 @@ impl PokerGameState {
         if all_acted && bets_equal {
             self.advance_street();
         }
+    }
+
+    fn run_out_board(&mut self) {
+        while self.community_cards.len() < 5 {
+            match self.stage {
+                GameStage::Preflop => {
+                    self.deal_community_cards(3);
+                    self.stage = GameStage::Flop;
+                }
+                GameStage::Flop => {
+                    self.deal_community_cards(1);
+                    self.stage = GameStage::Turn;
+                }
+                GameStage::Turn => {
+                    self.deal_community_cards(1);
+                    self.stage = GameStage::River;
+                }
+                _ => break,
+            }
+        }
+        self.stage = GameStage::Showdown;
     }
 
     fn advance_street(&mut self) {
@@ -791,10 +822,8 @@ impl PokerGameState {
 
     fn deal_community_cards(&mut self, count: usize) {
         self.deck.burn();
-        for _ in 0..count {
-            if let Some(card) = self.deck.deal(1) {
-                self.community_cards.extend(card);
-            }
+        if let Some(cards) = self.deck.deal(count) {
+            self.community_cards.extend(cards);
         }
     }
 
