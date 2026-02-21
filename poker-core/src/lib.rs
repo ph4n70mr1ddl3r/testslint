@@ -58,20 +58,20 @@ impl Suit {
     #[must_use]
     pub fn to_char(self) -> char {
         match self {
-            Suit::Spades => '♠',
-            Suit::Hearts => '♥',
-            Suit::Diamonds => '♦',
-            Suit::Clubs => '♣',
+            Self::Spades => '♠',
+            Self::Hearts => '♥',
+            Self::Diamonds => '♦',
+            Self::Clubs => '♣',
         }
     }
 
     #[must_use]
     pub fn from_char(c: char) -> Option<Self> {
         match c {
-            '♠' => Some(Suit::Spades),
-            '♥' => Some(Suit::Hearts),
-            '♦' => Some(Suit::Diamonds),
-            '♣' => Some(Suit::Clubs),
+            '♠' => Some(Self::Spades),
+            '♥' => Some(Self::Hearts),
+            '♦' => Some(Self::Diamonds),
+            '♣' => Some(Self::Clubs),
             _ => None,
         }
     }
