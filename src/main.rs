@@ -503,8 +503,6 @@ pub struct PokerGame {
     bet_amount: u64,
     min_bet: u64,
     max_bet: u64,
-    last_aggressor: Option<usize>,
-    pot_commitments: Vec<u64>,
     pot_odds: f32,
 }
 
@@ -531,8 +529,6 @@ impl PokerGame {
             bet_amount: CALL_AMOUNT_DEFAULT,
             min_bet: MIN_BET_DEFAULT,
             max_bet: MAX_BET_DEFAULT,
-            last_aggressor: None,
-            pot_commitments: vec![0; NUM_PLAYERS],
             pot_odds: 0.0,
         }
     }
@@ -574,8 +570,6 @@ impl PokerGame {
         }
 
         self.pot = 0;
-        self.pot_commitments = vec![0; self.players.len()];
-        self.last_aggressor = None;
 
         self.post_blinds()?;
 
@@ -598,8 +592,6 @@ impl PokerGame {
         self.players[bb_position].bet(BIG_BLIND_CHIPS)?;
 
         self.pot += SMALL_BLIND_CHIPS + BIG_BLIND_CHIPS;
-        self.pot_commitments[sb_position] += SMALL_BLIND_CHIPS;
-        self.pot_commitments[bb_position] += BIG_BLIND_CHIPS;
 
         Ok(())
     }
@@ -670,7 +662,6 @@ impl PokerGame {
                 let actual_call = call_amount.min(player.get_chips());
                 self.players[player_idx].bet(actual_call)?;
                 self.pot += actual_call;
-                self.pot_commitments[player_idx] += actual_call;
                 self.players[player_idx].set_has_acted(true);
                 self.update_ui(format!("{player_name} called {actual_call}"));
             }
@@ -683,8 +674,6 @@ impl PokerGame {
                 self.players[player_idx].bet(bet_amount)?;
                 self.to_call = bet_amount;
                 self.pot += bet_amount;
-                self.pot_commitments[player_idx] += bet_amount;
-                self.last_aggressor = Some(player_idx);
                 self.update_ui(format!("{player_name} bet {bet_amount}"));
             }
 
@@ -697,8 +686,6 @@ impl PokerGame {
                 self.players[player_idx].bet(raise_amount)?;
                 self.to_call = total_bet;
                 self.pot += raise_amount;
-                self.pot_commitments[player_idx] += raise_amount;
-                self.last_aggressor = Some(player_idx);
                 self.update_ui(format!("{player_name} raised to {total_bet}"));
             }
 
@@ -706,10 +693,8 @@ impl PokerGame {
                 let all_in_amount = player.get_chips();
                 self.players[player_idx].bet(all_in_amount)?;
                 self.pot += all_in_amount;
-                self.pot_commitments[player_idx] += all_in_amount;
                 if current_bet + all_in_amount > self.to_call {
                     self.to_call = current_bet + all_in_amount;
-                    self.last_aggressor = Some(player_idx);
                 }
                 self.update_ui(format!("{player_name} went all-in with {all_in_amount}"));
             }
