@@ -866,7 +866,7 @@ impl PokerGame {
                     std::cmp::Ordering::Equal => {
                         winners.push(player_idx);
                     }
-                    std::cmp::Ordering::Less => {}
+                    std::cmp::Ordering::Less => { /* current hand is worse, keep existing best */ }
                 }
             } else {
                 best_hand = Some(hand);
