@@ -300,13 +300,6 @@ impl EvaluatedHand {
             kickers,
         }
     }
-
-    pub fn compare(&self, other: &EvaluatedHand) -> std::cmp::Ordering {
-        self.rank
-            .cmp(&other.rank)
-            .then_with(|| self.primary_values.cmp(&other.primary_values))
-            .then_with(|| self.kickers.cmp(&other.kickers))
-    }
 }
 
 pub struct PokerHandEvaluator;
@@ -510,7 +503,6 @@ pub struct PokerGame {
     to_call: u64,
     game_weak: Weak<PokerApp>,
     pending_action: bool,
-    game_rc: Option<Rc<RefCell<PokerGame>>>,
     bet_amount: u64,
     min_bet: u64,
     max_bet: u64,
@@ -539,7 +531,6 @@ impl PokerGame {
             to_call: 0,
             game_weak,
             pending_action: false,
-            game_rc: None,
             bet_amount: CALL_AMOUNT_DEFAULT,
             min_bet: MIN_BET_DEFAULT,
             max_bet: MAX_BET_DEFAULT,
@@ -886,6 +877,7 @@ impl PokerGame {
         if winners.is_empty() {
             self.update_ui("Error determining winner".to_string());
             self.end_hand("Hand complete".to_string());
+            return;
         }
 
         let split_amount = self.pot / winners.len() as u64;
@@ -1129,7 +1121,6 @@ fn main() {
 
     let game_weak = app.as_weak();
     let game = Rc::new(RefCell::new(PokerGame::new(game_weak.clone())));
-    game.borrow_mut().game_rc = Some(game.clone());
 
     let game1 = game.clone();
     app.on_bet_changed(move |value| {
