@@ -233,7 +233,7 @@ impl PokerGame {
         }
     }
 
-    fn update_action_controls(&mut self, ui: &PokerApp) {
+    fn update_action_controls(&self, ui: &PokerApp) {
         ui.set_can_check(self.state.can_check());
         ui.set_can_call(self.state.can_call());
         ui.set_can_bet(self.state.can_bet());

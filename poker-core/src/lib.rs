@@ -387,28 +387,19 @@ impl PokerHandEvaluator {
                 .collect();
             flush_cards.sort_unstable_by(|a, b| b.cmp(a));
 
-            let is_straight = Self::check_straight(&flush_cards);
-            let top_flush_cards: Vec<u8> = flush_cards.into_iter().take(5).collect();
-
-            if is_straight {
-                if top_flush_cards[0] == 14 && top_flush_cards[1] == 13 {
+            if let Some(straight_ranks) = Self::find_straight(&flush_cards) {
+                if straight_ranks[0] == 14 && straight_ranks[1] == 13 {
                     return EvaluatedHand::new(HandRank::RoyalFlush, vec![14], Vec::new());
                 }
-                return EvaluatedHand::new(HandRank::StraightFlush, top_flush_cards, Vec::new());
+                return EvaluatedHand::new(HandRank::StraightFlush, straight_ranks, Vec::new());
             }
 
+            let top_flush_cards: Vec<u8> = flush_cards.into_iter().take(5).collect();
             return EvaluatedHand::new(HandRank::Flush, top_flush_cards, Vec::new());
         }
 
-        let straight = Self::check_straight(&ranks_dedup);
-        if straight {
-            let primary_values =
-                if ranks_dedup.contains(&14) && ranks_dedup.iter().take(5).any(|&r| r < 5) {
-                    vec![5, 4, 3, 2, 1]
-                } else {
-                    ranks_dedup.iter().take(5).copied().collect()
-                };
-            return EvaluatedHand::new(HandRank::Straight, primary_values, Vec::new());
+        if let Some(straight_ranks) = Self::find_straight(&ranks_dedup) {
+            return EvaluatedHand::new(HandRank::Straight, straight_ranks, Vec::new());
         }
 
         if let Some(three_rank) = rank_counts
@@ -457,17 +448,20 @@ impl PokerHandEvaluator {
         EvaluatedHand::new(HandRank::HighCard, Vec::new(), kickers)
     }
 
-    fn check_straight(ranks: &[u8]) -> bool {
+    fn find_straight(ranks: &[u8]) -> Option<Vec<u8>> {
         if ranks.len() < 5 {
-            return false;
+            return None;
         }
 
         let mut sorted_ranks = ranks.to_vec();
         sorted_ranks.sort_unstable();
         sorted_ranks.dedup();
 
-        if Self::has_consecutive_window(&sorted_ranks, 5) {
-            return true;
+        for i in 0..=sorted_ranks.len().saturating_sub(5) {
+            let window = &sorted_ranks[i..i + 5];
+            if window.windows(2).all(|w| w[1] == w[0] + 1) {
+                return Some(window.iter().rev().copied().collect());
+            }
         }
 
         if sorted_ranks.contains(&14) {
@@ -478,19 +472,16 @@ impl PokerHandEvaluator {
                 .collect();
             ace_low_ranks.sort_unstable();
             ace_low_ranks.dedup();
-            if Self::has_consecutive_window(&ace_low_ranks, 5) {
-                return true;
+
+            for i in 0..=ace_low_ranks.len().saturating_sub(5) {
+                let window = &ace_low_ranks[i..i + 5];
+                if window.windows(2).all(|w| w[1] == w[0] + 1) {
+                    return Some(vec![5, 4, 3, 2, 1]);
+                }
             }
         }
 
-        false
-    }
-
-    fn has_consecutive_window(ranks: &[u8], window_size: usize) -> bool {
-        (0..=ranks.len().saturating_sub(window_size)).any(|i| {
-            let window = &ranks[i..i + window_size];
-            window.windows(2).all(|w| w[1] == w[0] + 1)
-        })
+        None
     }
 }
 
@@ -1190,5 +1181,21 @@ mod tests {
         let evaluated = PokerHandEvaluator::evaluate(&hole_cards, &community_cards);
         assert_eq!(evaluated.rank, HandRank::Straight);
         assert_eq!(evaluated.primary_values, vec![5, 4, 3, 2, 1]);
+    }
+
+    #[test]
+    fn test_hand_evaluator_straight_with_higher_non_straight_cards() {
+        let hole_cards = vec![Card::new(14, Suit::Spades), Card::new(13, Suit::Hearts)];
+        let community_cards = vec![
+            Card::new(11, Suit::Diamonds),
+            Card::new(10, Suit::Clubs),
+            Card::new(9, Suit::Spades),
+            Card::new(8, Suit::Hearts),
+            Card::new(7, Suit::Diamonds),
+        ];
+
+        let evaluated = PokerHandEvaluator::evaluate(&hole_cards, &community_cards);
+        assert_eq!(evaluated.rank, HandRank::Straight);
+        assert_eq!(evaluated.primary_values, vec![11, 10, 9, 8, 7]);
     }
 }
